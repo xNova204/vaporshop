@@ -5,7 +5,7 @@ export default defineConfig({
   plugins: [react()],
   base: '/vaporshop/', // Ensures assets are loaded correctly
   build: {
-    outDir: 'dist',
+    outDir: 'build',
     sourcemap: true
   },
   server: {
