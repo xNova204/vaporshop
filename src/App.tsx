@@ -3,8 +3,8 @@ import GenreList from './components/GenreList';
 import GameList from './components/GameList';
 import Wishlist from './components/Wishlist';
 import Login from './components/Login';
-import ManageGames from './components/ManageGames'; // Re-import ManageGames
-import { fetchGamesFromFirestore, saveWishlistToFirestore, fetchWishlistFromFirestore } from './firebase/firestore';
+import ManageGames from './components/ManageGames';
+import { fetchGamesFromFirestore, saveWishlistToFirestore, fetchWishlistFromFirestore, saveInventoryToFirestore, fetchInventoryFromFirestore } from './firebase/firestore';
 import { Game, Genre } from './types/types';
 
 const App: React.FC = () => {
@@ -13,7 +13,8 @@ const App: React.FC = () => {
     const [role, setRole] = useState<'customer' | 'employee' | null>(null);
     const [genres, setGenres] = useState<Genre[]>([]);
     const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
-    const [wishlist, setWishlist] = useState<Game[]>([]);
+    const [wishlist, setWishlist] = useState<Game[]>([]); // Local wishlist state
+    const [inventory, setInventory] = useState<Game[]>([]); // Inventory for customers
     const [searchQuery, setSearchQuery] = useState<string>('');
 
     useEffect(() => {
@@ -35,16 +36,17 @@ const App: React.FC = () => {
     }, []);
 
     useEffect(() => {
-        // Fetch games from Firestore when logged in as employee
-        if (role === 'employee') {
-            // We no longer need to store the fetched games in a variable.
-            // If you need to process them later, you can filter them directly in the filteredGames function.
-        }
-    }, [role]);
+        if (userId && role === 'customer') {
+            // Fetch customer inventory
+            const fetchUserInventory = async () => {
+                const userInventory = await fetchInventoryFromFirestore(userId);
+                if (userInventory.length > 0) {
+                    setInventory(userInventory);
+                }
+            };
+            fetchUserInventory();
 
-    useEffect(() => {
-        // Only fetch the wishlist when the user logs in for the first time
-        if (userId && wishlist.length === 0) {
+            // Fetch customer wishlist from Firestore
             const fetchUserWishlist = async () => {
                 const userWishlist = await fetchWishlistFromFirestore(userId);
                 if (userWishlist.length > 0) {
@@ -53,10 +55,9 @@ const App: React.FC = () => {
             };
             fetchUserWishlist();
         }
-    }, [userId]);
+    }, [userId, role]);
 
     useEffect(() => {
-        // Save the wishlist to Firestore whenever it changes
         if (userId && wishlist.length > 0) {
             saveWishlistToFirestore(userId, wishlist);
         }
@@ -70,6 +71,15 @@ const App: React.FC = () => {
 
     const handleRemoveFromWishlist = (game: Game) => {
         setWishlist((prevWishlist) => prevWishlist.filter((item) => item.name !== game.name));
+    };
+
+    const handleAddToInventory = (game: Game) => {
+        if (!inventory.some((item) => item.name === game.name)) {
+            setInventory((prevInventory) => [...prevInventory, game]);
+            // Optionally remove from wishlist after purchase
+            handleRemoveFromWishlist(game);
+            saveInventoryToFirestore(userId!, inventory); // Save to Firestore
+        }
     };
 
     const handleLogin = (role: 'customer' | 'employee', userId: string) => {
@@ -151,6 +161,7 @@ const App: React.FC = () => {
                             <GameList
                                 games={filteredGames()}
                                 onAddToWishlist={addToWishlist}
+                                onBuyGame={handleAddToInventory} // New Buy Game functionality
                             />
                         </>
                     )}
@@ -158,6 +169,14 @@ const App: React.FC = () => {
                         games={wishlist}
                         onRemoveFromWishlist={handleRemoveFromWishlist}
                     />
+                    <h2>Your Inventory</h2>
+                    <ul>
+                        {inventory.map((game) => (
+                            <li key={game.id}>
+                                {game.name} - {game.price} ({game.genre})
+                            </li>
+                        ))}
+                    </ul>
                 </>
             )}
         </div>

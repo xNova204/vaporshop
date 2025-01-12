@@ -78,3 +78,34 @@ export const fetchWishlistFromFirestore = async (userId: string): Promise<Game[]
         return [];
     }
 };
+
+const inventoriesCollection = collection(db, "inventories"); // Reference for customer inventories
+
+// Save inventory to Firestore
+export const saveInventoryToFirestore = async (userId: string, inventory: Game[]) => {
+    try {
+        const userDoc = doc(inventoriesCollection, userId);
+        await setDoc(userDoc, { inventory });
+        console.log("Inventory saved successfully.");
+    } catch (err) {
+        console.error("Error saving inventory: ", err);
+    }
+};
+
+// Fetch inventory from Firestore
+export const fetchInventoryFromFirestore = async (userId: string): Promise<Game[]> => {
+    try {
+        const userDoc = doc(inventoriesCollection, userId);
+        const docSnap = await getDoc(userDoc);
+        if (docSnap.exists()) {
+            const data = docSnap.data();
+            return data.inventory || []; // Return inventory or empty array if not found
+        } else {
+            return [];
+        }
+    } catch (err) {
+        console.error("Error fetching inventory: ", err);
+        return [];
+    }
+};
+
