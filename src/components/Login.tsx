@@ -1,86 +1,62 @@
-import React, { useState } from 'react';
+// components/Login.tsx
+import React, { useState } from "react";
+import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import { auth } from "../firebase/firebase";
 
 interface LoginProps {
-    onLogin: (role: 'customer' | 'employee') => void;
+    onLogin: (role: "customer" | "employee") => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [role, setRole] = useState<'customer' | 'employee'>('customer');
-    const [error, setError] = useState('');
+    const [email, setEmail] = useState("");
+    const [password, setPassword] = useState("");
+    const [role, setRole] = useState<"customer" | "employee">("customer");
+    const [error, setError] = useState<string | null>(null);
 
-    const handleLogin = () => {
-        if (!email || !password) {
-            setError('Please fill out all fields');
-            return;
-        }
-
-        // Mock validation (replace with actual authentication logic if needed)
-        if (email.includes('@') && password.length >= 4) {
-            setError('');
-            onLogin(role); // Call the parent function to set the logged-in state
-        } else {
-            setError('Invalid email or password');
+    const handleLogin = async () => {
+        try {
+            await signInWithEmailAndPassword(auth, email, password);
+            onLogin(role);
+        } catch {
+            setError("Login failed. Please check your email and password.");
         }
     };
 
+    const handleSignUp = async () => {
+        try {
+            await createUserWithEmailAndPassword(auth, email, password);
+            onLogin(role);
+        } catch {
+            setError("Sign-up failed. Please try again.");
+        }
+    };
+
+
     return (
-        <div style={{ maxWidth: '400px', margin: '50px auto', fontFamily: 'Arial, sans-serif' }}>
-            <h1>Login</h1>
-            <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Email</label>
-                <input
-                    type="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
-                />
-            </div>
-            <div style={{ marginBottom: '20px' }}>
-                <label style={{ display: 'block', marginBottom: '5px' }}>Password</label>
-                <input
-                    type="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    style={{ width: '100%', padding: '10px', borderRadius: '5px', border: '1px solid #ccc' }}
-                />
-            </div>
-            <div style={{ marginBottom: '20px' }}>
-                <label>
-                    <input
-                        type="radio"
-                        value="customer"
-                        checked={role === 'customer'}
-                        onChange={() => setRole('customer')}
-                    />
-                    Customer
-                </label>
-                <label style={{ marginLeft: '20px' }}>
-                    <input
-                        type="radio"
-                        value="employee"
-                        checked={role === 'employee'}
-                        onChange={() => setRole('employee')}
-                    />
-                    Employee
-                </label>
-            </div>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <button
-                onClick={handleLogin}
-                style={{
-                    width: '100%',
-                    padding: '10px',
-                    backgroundColor: '#4caf50',
-                    color: '#fff',
-                    border: 'none',
-                    borderRadius: '5px',
-                    cursor: 'pointer'
-                }}
+        <div>
+            <h2>Login</h2>
+            <input
+                type="email"
+                placeholder="Email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+            />
+            <input
+                type="password"
+                placeholder="Password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+            />
+            <select
+                value={role}
+                onChange={(e) => setRole(e.target.value as "customer" | "employee")}
             >
-                Log In
-            </button>
+                <option value="customer">Customer</option>
+                <option value="employee">Employee</option>
+            </select>
+            <button onClick={handleLogin}>Login</button>
+            <button onClick={handleSignUp}>Sign Up</button>
+            {error && <p style={{ color: "red" }}>{error}</p>}
         </div>
     );
 };
