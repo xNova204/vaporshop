@@ -73,14 +73,22 @@ const App: React.FC = () => {
         setWishlist((prevWishlist) => prevWishlist.filter((item) => item.name !== game.name));
     };
 
-    const handleAddToInventory = (game: Game) => {
+    const handleAddToInventory = async (game: Game) => {
         if (!inventory.some((item) => item.name === game.name)) {
-            setInventory((prevInventory) => [...prevInventory, game]);
-            // Optionally remove from wishlist after purchase
+            // Add the game to the inventory
+            const newInventory = [...inventory, game];
+            setInventory(newInventory);
+
+            // Save the updated inventory to Firestore
+            if (userId) {
+                await saveInventoryToFirestore(userId, newInventory);
+            }
+
+            // Optionally, remove the game from the wishlist after purchase
             handleRemoveFromWishlist(game);
-            saveInventoryToFirestore(userId!, inventory); // Save to Firestore
         }
     };
+
 
     const handleLogin = (role: 'customer' | 'employee', userId: string) => {
         setRole(role);
@@ -168,6 +176,7 @@ const App: React.FC = () => {
                     <Wishlist
                         games={wishlist}
                         onRemoveFromWishlist={handleRemoveFromWishlist}
+                        onBuyGame={handleAddToInventory} // Pass Buy Game functionality here
                     />
                     <h2>Your Inventory</h2>
                     <ul>

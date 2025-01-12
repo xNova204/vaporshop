@@ -5,9 +5,10 @@ import { Game } from '../types/types'; // Import Game type
 interface WishlistProps {
     games: Game[];
     onRemoveFromWishlist: (game: Game) => void;
+    onBuyGame: (game: Game) => void; // Add onBuyGame prop
 }
 
-const Wishlist: React.FC<WishlistProps> = ({ games, onRemoveFromWishlist }) => {
+const Wishlist: React.FC<WishlistProps> = ({ games, onRemoveFromWishlist, onBuyGame }) => {
     return (
         <div>
             <h3>Your Wishlist</h3>
@@ -16,6 +17,7 @@ const Wishlist: React.FC<WishlistProps> = ({ games, onRemoveFromWishlist }) => {
                     <li key={game.id}>
                         {game.name} - {game.price} ({game.genre})
                         <button onClick={() => onRemoveFromWishlist(game)}>Remove</button>
+                        <button onClick={() => onBuyGame(game)}>Buy</button> {/* Add Buy button */}
                     </li>
                 ))}
             </ul>
