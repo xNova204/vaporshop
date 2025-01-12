@@ -1,4 +1,3 @@
-// src/firebase/firestore.ts
 import { collection, addDoc, getDocs, doc, deleteDoc, getDoc, setDoc } from "firebase/firestore";
 import { db } from "../firebase/firebase";
 import { Game } from "../types/types";  // Import the Game type
@@ -57,6 +56,7 @@ export const saveWishlistToFirestore = async (userId: string, wishlist: Game[]) 
     try {
         const userDoc = doc(wishlistsCollection, userId);
         await setDoc(userDoc, { wishlist });
+        console.log("Wishlist saved successfully.");
     } catch (err) {
         console.error("Error saving wishlist: ", err);
     }
@@ -69,7 +69,7 @@ export const fetchWishlistFromFirestore = async (userId: string): Promise<Game[]
         const docSnap = await getDoc(userDoc);
         if (docSnap.exists()) {
             const data = docSnap.data();
-            return data.wishlist || [];
+            return data.wishlist || []; // Return wishlist or empty array if not found
         } else {
             return [];
         }

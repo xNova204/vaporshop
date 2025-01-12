@@ -4,14 +4,14 @@ import { Game } from '../types/types';
 interface ManageGamesProps {
     genres: string[];
     onAddGame: (game: Omit<Game, 'id'>) => void; // Omit `id` from the passed game object
-    onRemoveGame: () => void;
+    onRemoveGame: (gameId: string) => void; // Accept a game ID to remove the correct game
     games: Game[];
 }
 
 const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGame, games }) => {
     const [newGame, setNewGame] = useState<Pick<Game, 'name' | 'genre' | 'price'>>({
         name: '',
-        genre: genres[0] || '',
+        genre: genres[0] || '', // Default to the first genre if available
         price: '', // Keep price as a string
     });
 
@@ -23,7 +23,7 @@ const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGa
         const gameToAdd: Omit<Game, 'id'> = { // Explicitly omit `id` from the game object
             name: newGame.name,
             genre: newGame.genre,
-            price: newGame.price, // String type
+            price: newGame.price, // Keep price as a string type
         };
 
         onAddGame(gameToAdd); // Call the function to add the game
@@ -66,7 +66,7 @@ const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGa
                     {games.map((game) => (
                         <li key={game.id}>
                             {game.name} - ${game.price}
-                            <button onClick={() => onRemoveGame()}>Remove</button>
+                            <button onClick={() => onRemoveGame(game.id)}>Remove</button>
                         </li>
                     ))}
                 </ul>
