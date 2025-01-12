@@ -36,13 +36,16 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             }
         } catch (error: unknown) {
             console.error(error);
-            // Ensure error is properly typed
+
+            // Handle the error type correctly without using `any`
             if (error instanceof Error) {
-                setError(
-                    error.code === 'auth/user-not-found'
-                        ? 'No account found with this email. Please sign up.'
-                        : error.message
-                );
+                if (error.message.includes('user-not-found')) {
+                    setError('No account found with this email. Please sign up.');
+                } else if (error.message.includes('wrong-password')) {
+                    setError('Incorrect password. Please try again.');
+                } else {
+                    setError(error.message || 'An unknown error occurred.');
+                }
             } else {
                 setError('An unknown error occurred.');
             }
