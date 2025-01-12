@@ -5,6 +5,7 @@ import {
     deleteGameFromFirestore,
 } from "../firebase/firestore";
 
+// Define the types for the props correctly
 interface Game {
     id: string;
     name: string;
@@ -12,34 +13,40 @@ interface Game {
     genre: string;
 }
 
-const ManageGames: React.FC<{ genres: { id: string; name: string }[] }> = ({ genres }) => {
-    const [games, setGames] = useState<Game[]>([]); // Use Game type for state
+interface ManageGamesProps {
+    genres: { id: string; name: string }[];  // Genres array as before
+    onAddGame: (genreId: string, game: Game) => void;  // Add the type for onAddGame
+    onRemoveGame: (genreId: string, gameName: string) => void;  // Add the type for onRemoveGame
+}
+
+const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGame }) => {
+    const [games, setGames] = useState<Game[]>([]);
     const [newGame, setNewGame] = useState<Omit<Game, "id">>({
         name: "",
         price: "",
         genre: "",
-    }); // Exclude 'id' for new game input
+    });
 
     useEffect(() => {
         const loadGames = async () => {
             const fetchedGames = await fetchGamesFromFirestore();
-            setGames(fetchedGames as Game[]); // Type assertion to Game[]
+            setGames(fetchedGames as Game[]);
         };
         loadGames();
     }, []);
 
     const handleAddGame = async () => {
         await addGameToFirestore(newGame);
-        setGames((prevGames) => [
-            ...prevGames,
-            { id: Date.now().toString(), ...newGame }, // Temporary ID
-        ]);
+        const addedGame = { id: Date.now().toString(), ...newGame };
+        setGames((prevGames) => [...prevGames, addedGame]); // Temporary ID
+        onAddGame(newGame.genre, addedGame);  // Call the prop function for adding
         setNewGame({ name: "", price: "", genre: "" });
     };
 
-    const handleDeleteGame = async (gameId: string) => {
+    const handleDeleteGame = async (gameId: string, genreId: string, gameName: string) => {
         await deleteGameFromFirestore(gameId);
         setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
+        onRemoveGame(genreId, gameName);  // Call the prop function for removing
     };
 
     return (
@@ -80,7 +87,9 @@ const ManageGames: React.FC<{ genres: { id: string; name: string }[] }> = ({ gen
                 {games.map((game) => (
                     <li key={game.id}>
                         {game.name} - {game.price} ({game.genre})
-                        <button onClick={() => handleDeleteGame(game.id)}>Delete</button>
+                        <button onClick={() => handleDeleteGame(game.id, game.genre, game.name)}>
+                            Delete
+                        </button>
                     </li>
                 ))}
             </ul>
