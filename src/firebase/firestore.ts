@@ -1,7 +1,6 @@
-// src/firebase/firestore.ts
 import { db } from './firebase'; // Assuming you're using Firebase for the database
 import { Game } from '../types/types';
-import { doc, getDoc, setDoc, collection, getDocs, query } from 'firebase/firestore'; // Added `query`
+import { doc, getDoc, setDoc, collection, getDocs, query, addDoc } from 'firebase/firestore'; // Updated import for addDoc
 
 // Function to save a user's wishlist to Firestore
 export const saveWishlistToFirestore = async (userId: string, wishlist: Game[]) => {
@@ -38,11 +37,22 @@ export const fetchInventoryFromFirestore = async (userId: string): Promise<Game[
 // Function to fetch all games from Firestore
 export const fetchGamesFromFirestore = async (): Promise<Game[]> => {
     const gamesCollection = collection(db, 'games');
-    const q = query(gamesCollection); // Using query here
+    const q = query(gamesCollection);
     const querySnapshot = await getDocs(q);
     const games: Game[] = [];
     querySnapshot.forEach((doc) => {
         games.push(doc.data() as Game);
     });
     return games;
+};
+
+// Function to save a refund request to Firestore
+export const saveRefundRequest = async (userId: string, gameId: string, reason: string) => {
+    await addDoc(collection(db, 'refundRequests'), {
+        userId,
+        gameId,
+        reason,
+        status: 'pending',
+        createdAt: new Date(),
+    });
 };

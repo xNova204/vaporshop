@@ -4,7 +4,7 @@ import GameList from './components/GameList';
 import Wishlist from './components/Wishlist';
 import Login from './components/Login';
 import ManageGames from './components/ManageGames';
-import { fetchGamesFromFirestore, saveWishlistToFirestore, fetchWishlistFromFirestore, saveInventoryToFirestore, fetchInventoryFromFirestore } from './firebase/firestore';
+import { fetchGamesFromFirestore, saveWishlistToFirestore, fetchWishlistFromFirestore, saveInventoryToFirestore, fetchInventoryFromFirestore, saveRefundRequest } from './firebase/firestore';
 import { Game, Genre } from './types/types';
 
 const App: React.FC = () => {
@@ -16,6 +16,9 @@ const App: React.FC = () => {
     const [wishlist, setWishlist] = useState<Game[]>([]); // Local wishlist state
     const [inventory, setInventory] = useState<Game[]>([]); // Inventory for customers
     const [searchQuery, setSearchQuery] = useState<string>('');
+    const [refundReason, setRefundReason] = useState<string>('');
+    const [showRefundPrompt, setShowRefundPrompt] = useState<boolean>(false);
+    const [selectedGameForRefund, setSelectedGameForRefund] = useState<Game | null>(null);
 
     useEffect(() => {
         const fetchGenres = async () => {
@@ -37,7 +40,6 @@ const App: React.FC = () => {
 
     useEffect(() => {
         if (userId && role === 'customer') {
-            // Fetch customer inventory
             const fetchUserInventory = async () => {
                 const userInventory = await fetchInventoryFromFirestore(userId);
                 if (userInventory.length > 0) {
@@ -46,7 +48,6 @@ const App: React.FC = () => {
             };
             fetchUserInventory();
 
-            // Fetch customer wishlist from Firestore
             const fetchUserWishlist = async () => {
                 const userWishlist = await fetchWishlistFromFirestore(userId);
                 if (userWishlist.length > 0) {
@@ -89,6 +90,21 @@ const App: React.FC = () => {
         }
     };
 
+    const handleRequestRefund = async (game: Game, reason: string) => {
+        if (!reason) {
+            alert("Please provide a reason for the refund.");
+            return;
+        }
+        await saveRefundRequest(userId!, game.id, reason);
+        alert("Your refund request has been submitted and is pending approval.");
+        setShowRefundPrompt(false); // Close the refund reason prompt
+        setRefundReason(''); // Reset reason
+    };
+
+    const handleRefundButtonClick = (game: Game) => {
+        setSelectedGameForRefund(game);
+        setShowRefundPrompt(true);
+    };
 
     const handleLogin = (role: 'customer' | 'employee', userId: string) => {
         setRole(role);
@@ -183,10 +199,26 @@ const App: React.FC = () => {
                         {inventory.map((game) => (
                             <li key={game.id}>
                                 {game.name} - {game.price} ({game.genre})
+                                <button onClick={() => handleRefundButtonClick(game)}>Request Refund</button>
                             </li>
                         ))}
                     </ul>
                 </>
+            )}
+
+            {showRefundPrompt && selectedGameForRefund && (
+                <div>
+                    <h3>Request a Refund for {selectedGameForRefund.name}</h3>
+                    <textarea
+                        value={refundReason}
+                        onChange={(e) => setRefundReason(e.target.value)}
+                        placeholder="Please provide a reason for the refund."
+                        rows={4}
+                        style={{ width: '100%' }}
+                    />
+                    <button onClick={() => handleRequestRefund(selectedGameForRefund, refundReason)}>Submit Request</button>
+                    <button onClick={() => setShowRefundPrompt(false)}>Cancel</button>
+                </div>
             )}
         </div>
     );
