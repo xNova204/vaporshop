@@ -8,11 +8,18 @@ const gamesCollection = collection(db, "games");
 const wishlistsCollection = collection(db, "wishlists"); // Reference for wishlists
 
 // Add a new game
-export const addGameToFirestore = async (game: Game) => {
+export const addGameToFirestore = async (game: Omit<Game, 'id'>) => {
     try {
-        await addDoc(gamesCollection, game);
-    } catch (err) {
-        console.error("Error adding game: ", err);
+        // Ensure the game object is passed with only the necessary fields (excluding `id`)
+        const docRef = await addDoc(collection(db, 'games'), {
+            name: game.name,
+            genre: game.genre,
+            price: game.price, // Ensure price is a string if that's your choice
+        });
+
+        console.log("Game added with ID:", docRef.id); // Firestore generates the ID
+    } catch (error) {
+        console.error("Error adding game: ", error);
     }
 };
 
