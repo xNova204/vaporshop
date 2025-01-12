@@ -1,20 +1,20 @@
-// src/App.tsx
 import React, { useState, useEffect } from 'react';
 import GenreList from './components/GenreList';
 import GameList from './components/GameList';
 import Wishlist from './components/Wishlist';
 import Login from './components/Login';
 import ManageGames from './components/ManageGames';
-import { fetchGamesFromFirestore } from './firebase/firestore'; // Assuming this is your firestore file
-import { Game, Genre } from './types/types'; // Import Game and Genre types from types.ts
+import { fetchGamesFromFirestore, saveWishlistToFirestore, fetchWishlistFromFirestore } from './firebase/firestore';
+import { Game, Genre } from './types/types';
 
 const App: React.FC = () => {
     const [loggedIn, setLoggedIn] = useState(false);
+    const [userId, setUserId] = useState<string | null>(null); // Unique ID for the user
     const [role, setRole] = useState<'customer' | 'employee' | null>(null);
-    const [genres, setGenres] = useState<Genre[]>([]);  // State to hold genres
+    const [genres, setGenres] = useState<Genre[]>([]);
     const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
     const [wishlist, setWishlist] = useState<Game[]>([]);
-    const [searchQuery, setSearchQuery] = useState<string>(''); // Search query state
+    const [searchQuery, setSearchQuery] = useState<string>('');
 
     useEffect(() => {
         const fetchGenres = async () => {
@@ -28,11 +28,29 @@ const App: React.FC = () => {
                 genreMap[game.genre].games.push(game);
             });
 
-            setGenres(Object.values(genreMap)); // Set the genres based on the fetched games
+            setGenres(Object.values(genreMap));
         };
 
         fetchGenres();
     }, []);
+
+    useEffect(() => {
+        // Fetch wishlist when user logs in
+        if (userId) {
+            const fetchUserWishlist = async () => {
+                const userWishlist = await fetchWishlistFromFirestore(userId);
+                setWishlist(userWishlist);
+            };
+            fetchUserWishlist();
+        }
+    }, [userId]);
+
+    useEffect(() => {
+        // Save wishlist whenever it changes
+        if (userId) {
+            saveWishlistToFirestore(userId, wishlist);
+        }
+    }, [wishlist, userId]);
 
     const addToWishlist = (game: Game) => {
         if (!wishlist.some((item) => item.name === game.name)) {
@@ -44,12 +62,12 @@ const App: React.FC = () => {
         setWishlist((prevWishlist) => prevWishlist.filter((item) => item.name !== game.name));
     };
 
-    const handleLogin = (role: 'customer' | 'employee') => {
+    const handleLogin = (role: 'customer' | 'employee', userId: string) => {
         setRole(role);
         setLoggedIn(true);
+        setUserId(userId);
     };
 
-    // Filter games within the selected genre based on the search query
     const filteredGames = () => {
         const selectedGenreData = genres.find((genre) => genre.name === selectedGenre);
         return selectedGenreData
@@ -60,7 +78,7 @@ const App: React.FC = () => {
     };
 
     if (!loggedIn) {
-        return <Login onLogin={handleLogin} />;
+        return <Login onLogin={(role: 'customer' | 'employee', userId: string) => handleLogin(role, userId)} />;
     }
 
     return (
@@ -102,7 +120,7 @@ const App: React.FC = () => {
                         <>
                             <h2>Games in {selectedGenre} Genre</h2>
                             <GameList
-                                games={filteredGames()} // Filtered games based on search query
+                                games={filteredGames()}
                                 onAddToWishlist={addToWishlist}
                             />
                         </>

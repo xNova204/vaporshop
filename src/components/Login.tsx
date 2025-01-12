@@ -1,62 +1,106 @@
-// components/Login.tsx
-import React, { useState } from "react";
-import { signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { auth } from "../firebase/firebase";
+import React, { useState } from 'react';
+import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 interface LoginProps {
-    onLogin: (role: "customer" | "employee") => void;
+    onLogin: (role: 'customer' | 'employee', userId: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-    const [email, setEmail] = useState("");
-    const [password, setPassword] = useState("");
-    const [role, setRole] = useState<"customer" | "employee">("customer");
-    const [error, setError] = useState<string | null>(null);
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [role, setRole] = useState<'customer' | 'employee'>('customer');
+    const [isSignUp, setIsSignUp] = useState(false); // Toggle between login and sign-up
+    const [error, setError] = useState<string>(''); // Specify type as string
 
-    const handleLogin = async () => {
+    const auth = getAuth();
+
+    const handleLoginOrSignUp = async () => {
+        if (!email || !password) {
+            setError('Please provide both email and password.');
+            return;
+        }
+
         try {
-            await signInWithEmailAndPassword(auth, email, password);
-            onLogin(role);
-        } catch {
-            setError("Login failed. Please check your email and password.");
+            if (isSignUp) {
+                // Create a new account
+                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                const userId = userCredential.user.uid; // Get the user's unique ID
+                console.log('New account created:', { email, role, userId });
+                onLogin(role, userId);
+            } else {
+                // Log in with existing account
+                const userCredential = await signInWithEmailAndPassword(auth, email, password);
+                const userId = userCredential.user.uid; // Get the user's unique ID
+                console.log('Logged in successfully:', { email, role, userId });
+                onLogin(role, userId);
+            }
+        } catch (error: unknown) {
+            console.error(error);
+            // Ensure error is properly typed
+            if (error instanceof Error) {
+                setError(
+                    error.code === 'auth/user-not-found'
+                        ? 'No account found with this email. Please sign up.'
+                        : error.message
+                );
+            } else {
+                setError('An unknown error occurred.');
+            }
         }
     };
-
-    const handleSignUp = async () => {
-        try {
-            await createUserWithEmailAndPassword(auth, email, password);
-            onLogin(role);
-        } catch {
-            setError("Sign-up failed. Please try again.");
-        }
-    };
-
 
     return (
         <div>
-            <h2>Login</h2>
-            <input
-                type="email"
-                placeholder="Email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-            />
-            <input
-                type="password"
-                placeholder="Password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-            />
-            <select
-                value={role}
-                onChange={(e) => setRole(e.target.value as "customer" | "employee")}
+            <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
+            <div>
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                />
+            </div>
+            <div>
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                />
+            </div>
+            <div>
+                <label>
+                    <input
+                        type="radio"
+                        value="customer"
+                        checked={role === 'customer'}
+                        onChange={() => setRole('customer')}
+                    />
+                    Customer
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        value="employee"
+                        checked={role === 'employee'}
+                        onChange={() => setRole('employee')}
+                    />
+                    Employee
+                </label>
+            </div>
+            {error && <p style={{ color: 'red' }}>{error}</p>}
+            <button onClick={handleLoginOrSignUp}>
+                {isSignUp ? 'Sign Up' : 'Login'}
+            </button>
+            <button
+                style={{ marginLeft: '10px' }}
+                onClick={() => {
+                    setIsSignUp(!isSignUp);
+                    setError('');
+                }}
             >
-                <option value="customer">Customer</option>
-                <option value="employee">Employee</option>
-            </select>
-            <button onClick={handleLogin}>Login</button>
-            <button onClick={handleSignUp}>Sign Up</button>
-            {error && <p style={{ color: "red" }}>{error}</p>}
+                {isSignUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
+            </button>
         </div>
     );
 };
