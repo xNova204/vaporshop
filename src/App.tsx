@@ -3,7 +3,7 @@ import GenreList from './components/GenreList';
 import GameList from './components/GameList';
 import Wishlist from './components/Wishlist';
 import Login from './components/Login';
-import ManageGames from './components/ManageGames';
+import ManageGames from './components/ManageGames'; // Re-import ManageGames
 import { fetchGamesFromFirestore, saveWishlistToFirestore, fetchWishlistFromFirestore } from './firebase/firestore';
 import { Game, Genre } from './types/types';
 
@@ -33,6 +33,14 @@ const App: React.FC = () => {
 
         fetchGenres();
     }, []);
+
+    useEffect(() => {
+        // Fetch games from Firestore when logged in as employee
+        if (role === 'employee') {
+            // We no longer need to store the fetched games in a variable.
+            // If you need to process them later, you can filter them directly in the filteredGames function.
+        }
+    }, [role]);
 
     useEffect(() => {
         // Only fetch the wishlist when the user logs in for the first time
@@ -103,12 +111,30 @@ const App: React.FC = () => {
             </div>
 
             {role === 'employee' && (
-                <ManageGames
-                    genres={genres.map((genre) => genre.name)}
-                    onAddGame={() => {}} // Implement add game functionality
-                    onRemoveGame={() => {}} // Implement remove game functionality
-                    games={[]}
-                />
+                <>
+                    <h2>Manage Games</h2>
+                    <div>
+                        <h3>Select Genre</h3>
+                        <select
+                            value={selectedGenre || ''}
+                            onChange={(e) => setSelectedGenre(e.target.value)}
+                            style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc', width: '100%' }}
+                        >
+                            <option value="">All Genres</option>
+                            {genres.map((genre) => (
+                                <option key={genre.id} value={genre.name}>
+                                    {genre.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
+                    <ManageGames
+                        genres={genres.map((genre) => genre.name)}
+                        onAddGame={() => {}}
+                        onRemoveGame={() => {}}
+                        games={filteredGames()}
+                    />
+                </>
             )}
 
             {role === 'customer' && (
