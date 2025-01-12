@@ -6,12 +6,16 @@ import { Game } from "../types/types";  // Import the Game type
 // Firestore collection references
 const gamesCollection = collection(db, "games");
 
+
 // Add a new game
-export const addGameToFirestore = async (game: Game) => {
+export const addGameToFirestore = async (game: Omit<Game, "id">): Promise<Game | null> => {
     try {
-        await addDoc(gamesCollection, game);
+        const docRef = await addDoc(gamesCollection, game);  // Add the game to Firestore
+        const addedGame = { ...game, id: docRef.id };  // Add the Firestore generated ID to the game object
+        return addedGame;
     } catch (err) {
         console.error("Error adding game: ", err);
+        return null;
     }
 };
 

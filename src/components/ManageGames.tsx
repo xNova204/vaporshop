@@ -33,18 +33,27 @@ const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGa
 
     // Handle adding a game
     const handleAddGame = async () => {
-        await addGameToFirestore(newGame);
-        const addedGame = { id: Date.now().toString(), ...newGame };
-        setGames((prevGames) => [...prevGames, addedGame]); // Temporary ID
-        onAddGame(newGame.genre, addedGame);  // Call the prop function for adding
-        setNewGame({ name: "", price: "", genre: "" });
+        if (!newGame.name || !newGame.price || !newGame.genre) {
+            alert("Please fill out all fields.");
+            return;
+        }
+
+        // Add the game to Firestore
+        const addedGame = await addGameToFirestore(newGame);
+
+        // If Firestore successfully returns the game with its generated ID, update the state
+        if (addedGame) {
+            setGames((prevGames) => [...prevGames, addedGame]);  // Add the game with the generated ID
+            onAddGame(newGame.genre, addedGame);  // Call the prop function for adding the game
+            setNewGame({ name: "", price: "", genre: "" });  // Reset the form
+        }
     };
 
     // Handle deleting a game
     const handleDeleteGame = async (gameId: string, genreId: string, gameName: string) => {
         await deleteGameFromFirestore(gameId);
         setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
-        onRemoveGame(genreId, gameName);  // Call the prop function for removing
+        onRemoveGame(genreId, gameName);  // Call the prop function for removing the game
     };
 
     return (
