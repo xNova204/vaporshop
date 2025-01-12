@@ -1,58 +1,37 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import GenreList from './components/GenreList';
 import GameList from './components/GameList';
 import Wishlist from './components/Wishlist';
 import Login from './components/Login';
 import ManageGames from './components/ManageGames';
-
-interface Game {
-    name: string;
-    price: string;
-}
-
-interface Genre {
-    id: string;
-    name: string;
-    games: Game[];
-}
+import { fetchGamesFromFirestore } from './firebase/firestore'; // Assuming this is your firestore file
+import { Game, Genre } from './types/types'; // Import Game and Genre types from types.ts
 
 const App: React.FC = () => {
-    const initialGenres: Genre[] = [
-        {
-            id: '1',
-            name: 'Action',
-            games: [
-                { name: 'God of War', price: '$49.99' },
-                { name: 'Devil May Cry', price: '$29.99' },
-                { name: 'DOOM', price: '$39.99' },
-            ],
-        },
-        {
-            id: '2',
-            name: 'RPG',
-            games: [
-                { name: 'The Witcher 3', price: '$39.99' },
-                { name: 'Final Fantasy VII', price: '$59.99' },
-                { name: 'Skyrim', price: '$19.99' },
-            ],
-        },
-        {
-            id: '3',
-            name: 'Shooter',
-            games: [
-                { name: 'Call of Duty', price: '$69.99' },
-                { name: 'Halo', price: '$49.99' },
-                { name: 'Overwatch', price: '$19.99' },
-            ],
-        },
-    ];
-
     const [loggedIn, setLoggedIn] = useState(false);
     const [role, setRole] = useState<'customer' | 'employee' | null>(null);
-    const [genres, setGenres] = useState<Genre[]>(initialGenres);
+    const [genres, setGenres] = useState<Genre[]>([]);  // State to hold genres
     const [selectedGenre, setSelectedGenre] = useState<string | null>(null);
     const [wishlist, setWishlist] = useState<Game[]>([]);
     const [searchQuery, setSearchQuery] = useState<string>(''); // Search query state
+
+    useEffect(() => {
+        const fetchGenres = async () => {
+            const games = await fetchGamesFromFirestore();
+            const genreMap: { [key: string]: Genre } = {};
+
+            games.forEach((game) => {
+                if (!genreMap[game.genre]) {
+                    genreMap[game.genre] = { id: game.genre, name: game.genre, games: [] };
+                }
+                genreMap[game.genre].games.push(game);
+            });
+
+            setGenres(Object.values(genreMap)); // Set the genres based on the fetched games
+        };
+
+        fetchGenres();
+    }, []);
 
     const addToWishlist = (game: Game) => {
         if (!wishlist.some((item) => item.name === game.name)) {
@@ -62,26 +41,6 @@ const App: React.FC = () => {
 
     const handleRemoveFromWishlist = (game: Game) => {
         setWishlist((prevWishlist) => prevWishlist.filter((item) => item.name !== game.name));
-    };
-
-    const handleAddGame = (genreId: string, game: Game) => {
-        setGenres((prevGenres) =>
-            prevGenres.map((genre) =>
-                genre.id === genreId
-                    ? { ...genre, games: [...genre.games, game] }
-                    : genre
-            )
-        );
-    };
-
-    const handleRemoveGame = (genreId: string, gameName: string) => {
-        setGenres((prevGenres) =>
-            prevGenres.map((genre) =>
-                genre.id === genreId
-                    ? { ...genre, games: genre.games.filter((game) => game.name !== gameName) }
-                    : genre
-            )
-        );
     };
 
     const handleLogin = (role: 'customer' | 'employee') => {
@@ -125,8 +84,8 @@ const App: React.FC = () => {
             {role === 'employee' && (
                 <ManageGames
                     genres={genres}
-                    onAddGame={handleAddGame}
-                    onRemoveGame={handleRemoveGame}
+                    onAddGame={() => {}} // Implement add game functionality
+                    onRemoveGame={() => {}} // Implement remove game functionality
                 />
             )}
 

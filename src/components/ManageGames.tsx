@@ -1,11 +1,6 @@
-import React, { useState, useEffect } from "react";
-import {
-    addGameToFirestore,
-    fetchGamesFromFirestore,
-    deleteGameFromFirestore,
-} from "../firebase/firestore";
+import React, { useState, useEffect } from 'react';
+import { addGameToFirestore, fetchGamesFromFirestore, deleteGameFromFirestore } from '../firebase/firestore';
 
-// Define the types for the props correctly
 interface Game {
     id: string;
     name: string;
@@ -27,6 +22,7 @@ const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGa
         genre: "",
     });
 
+    // Fetch games from Firestore when component mounts
     useEffect(() => {
         const loadGames = async () => {
             const fetchedGames = await fetchGamesFromFirestore();
@@ -35,6 +31,7 @@ const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGa
         loadGames();
     }, []);
 
+    // Handle adding a game
     const handleAddGame = async () => {
         await addGameToFirestore(newGame);
         const addedGame = { id: Date.now().toString(), ...newGame };
@@ -43,6 +40,7 @@ const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGa
         setNewGame({ name: "", price: "", genre: "" });
     };
 
+    // Handle deleting a game
     const handleDeleteGame = async (gameId: string, genreId: string, gameName: string) => {
         await deleteGameFromFirestore(gameId);
         setGames((prevGames) => prevGames.filter((game) => game.id !== gameId));
@@ -52,37 +50,40 @@ const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGa
     return (
         <div>
             <h2>Manage Games</h2>
-            <input
-                type="text"
-                placeholder="Name"
-                value={newGame.name}
-                onChange={(e) =>
-                    setNewGame((prev) => ({ ...prev, name: e.target.value }))
-                }
-            />
-            <input
-                type="text"
-                placeholder="Price"
-                value={newGame.price}
-                onChange={(e) =>
-                    setNewGame((prev) => ({ ...prev, price: e.target.value }))
-                }
-            />
-            <select
-                value={newGame.genre}
-                onChange={(e) =>
-                    setNewGame((prev) => ({ ...prev, genre: e.target.value }))
-                }
-            >
-                <option value="">Select Genre</option>
-                {genres.map((genre) => (
-                    <option key={genre.id} value={genre.name}>
-                        {genre.name}
-                    </option>
-                ))}
-            </select>
-            <button onClick={handleAddGame}>Add Game</button>
+            <div>
+                <input
+                    type="text"
+                    placeholder="Name"
+                    value={newGame.name}
+                    onChange={(e) =>
+                        setNewGame((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                />
+                <input
+                    type="text"
+                    placeholder="Price"
+                    value={newGame.price}
+                    onChange={(e) =>
+                        setNewGame((prev) => ({ ...prev, price: e.target.value }))
+                    }
+                />
+                <select
+                    value={newGame.genre}
+                    onChange={(e) =>
+                        setNewGame((prev) => ({ ...prev, genre: e.target.value }))
+                    }
+                >
+                    <option value="">Select Genre</option>
+                    {genres.map((genre) => (
+                        <option key={genre.id} value={genre.name}>
+                            {genre.name}
+                        </option>
+                    ))}
+                </select>
+                <button onClick={handleAddGame}>Add Game</button>
+            </div>
 
+            <h3>Games List</h3>
             <ul>
                 {games.map((game) => (
                     <li key={game.id}>
