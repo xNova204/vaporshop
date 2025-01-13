@@ -41,17 +41,22 @@ const App: React.FC = () => {
 
     const handleAddGame = async (game: Omit<Game, 'id'>) => {
         try {
-            await addGameToFirestore(game); // Add game to Firestore
-            setInventory((prevInventory) => [...prevInventory, { ...game, id: Math.random().toString(36).substring(7) }]); // Add to state temporarily
+            await addGameToFirestore(game); // Add to Firestore
+            setInventory((prevInventory) => [...prevInventory, { ...game, id: Math.random().toString(36).substring(7) }]); // Update state
         } catch (error) {
             console.error("Error adding game:", error);
         }
     };
 
+
+
     const handleRemoveGame = async (gameId: string) => {
         try {
-            await deleteGameFromFirestore(gameId); // Delete from Firestore
-            setInventory((prevInventory) => prevInventory.filter((game) => game.id !== gameId)); // Remove from state
+            // Remove the game from Firestore
+            await deleteGameFromFirestore(gameId);
+
+            // Remove the game from the local state (inventory or game list)
+            setInventory((prevInventory) => prevInventory.filter((game) => game.id !== gameId));
         } catch (error) {
             console.error("Error removing game:", error);
         }

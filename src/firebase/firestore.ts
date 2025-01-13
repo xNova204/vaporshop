@@ -86,6 +86,7 @@ export const fetchGamesFromFirestore = async (): Promise<Game[]> => {
 };
 
 
+
 // Function to save a refund request to Firestore
 export const saveRefundRequest = async (userId: string, gameId: string, reason: string) => {
     try {
