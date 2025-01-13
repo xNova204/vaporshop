@@ -1,7 +1,7 @@
 {
   "name": "vaporshop",
   "private": true,
-  "homepage": "https://xnova204.github.io/vaporshop",
+  "homepage": "https://vaporshop-73d02.web.app",
   "version": "0.0.0",
   "type": "module",
   "scripts": {
@@ -10,7 +10,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "predeploy": "npm run build",
-    "deploy": "gh-pages -d build"
+    "deploy": "firebase deploy"
   },
   "dependencies": {
     "firebase": "^11.1.0",

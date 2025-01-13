@@ -3,9 +3,9 @@ import react from '@vitejs/plugin-react'
 
 export default defineConfig({
   plugins: [react()],
-  base: '/vaporshop/', // Ensures assets are loaded correctly
+  base: '', // Ensures assets are loaded correctly
   build: {
-    outDir: 'build',
+    outDir: 'dist',
     sourcemap: true
   },
   server: {
