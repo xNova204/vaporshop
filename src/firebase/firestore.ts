@@ -1,7 +1,8 @@
 import { db } from './firebase'; // Assuming you're using Firebase for the database
 import { Game } from '../types/types';
-import { doc, getDoc, setDoc, collection, getDocs, query, addDoc, updateDoc, DocumentData, where} from 'firebase/firestore'; // Updated import for addDoc
+import { doc, getDoc, setDoc, collection, getDocs, query, addDoc, updateDoc, DocumentData, where, deleteDoc} from 'firebase/firestore'; // Updated import for addDoc
 import { FirebaseError } from 'firebase/app';
+
 
 
 interface RefundRequest {
@@ -12,6 +13,31 @@ interface RefundRequest {
     status: 'pending' | 'approved' | 'denied';
     createdAt: Date;
 }
+
+// Firestore collection references
+const gamesCollection = collection(db, "games");
+
+// Add a new game
+
+// Add a new game to Firestore
+export const addGameToFirestore = async (game: Omit<Game, 'id'>) => {
+    try {
+        const docRef = await addDoc(gamesCollection, game);
+        console.log('Game added with ID: ', docRef.id);
+    } catch (error) {
+        console.error('Error adding game: ', error);
+    }
+};
+
+// Delete a game
+export const deleteGameFromFirestore = async (gameId: string) => {
+    try {
+        const gameDoc = doc(db, "games", gameId);
+        await deleteDoc(gameDoc);
+    } catch (err) {
+        console.error("Error deleting game: ", err);
+    }
+};
 
 // Function to save a user's wishlist to Firestore
 export const saveWishlistToFirestore = async (userId: string, wishlist: Game[]) => {

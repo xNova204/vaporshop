@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Game } from '../types/types';
+import { addGameToFirestore, deleteGameFromFirestore } from '../firebase/firestore';
 
 interface ManageGamesProps {
     genres: string[];
@@ -15,20 +16,30 @@ const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGa
         price: '', // Keep price as a string
     });
 
-    const handleAddGame = () => {
+    const handleAddGame = async () => {
         if (!newGame.name || !newGame.price || !newGame.genre) {
+            alert('Please fill in all the fields.');
             return; // Show a warning if any fields are missing
         }
 
-        const gameToAdd: Omit<Game, 'id'> = { // Explicitly omit `id` from the game object
+        const gameToAdd: Omit<Game, 'id'> = {
             name: newGame.name,
             genre: newGame.genre,
             price: newGame.price, // Keep price as a string type
         };
 
-        onAddGame(gameToAdd); // Call the function to add the game
-        setNewGame({ name: '', genre: genres[0] || '', price: '' }); // Reset input fields
+        try {
+            // Add the new game to Firestore
+            await addGameToFirestore(gameToAdd);
+            onAddGame(gameToAdd); // Update parent state with the new game
+            setNewGame({ name: '', genre: genres[0] || '', price: '' }); // Reset fields
+            alert('Game added successfully!');
+        } catch (error) {
+            console.error('Error adding game:', error);
+            alert('Failed to add game.');
+        }
     };
+
 
     return (
         <div>

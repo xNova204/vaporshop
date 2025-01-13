@@ -4,6 +4,7 @@ import GameList from './components/GameList';
 import Wishlist from './components/Wishlist';
 import Login from './components/Login';
 import ManageGames from './components/ManageGames';
+import { addGameToFirestore, deleteGameFromFirestore } from './firebase/firestore';
 import {
     fetchGamesFromFirestore,
     saveWishlistToFirestore,
@@ -37,6 +38,25 @@ const App: React.FC = () => {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);  // New state for selected game
     const [reviews, setReviews] = useState<{ userId: string; review: string; rating: number; createdAt: Date }[]>([]);
     const [reviewText, setReviewText] = useState<string>('');  // State for the review input
+
+    const handleAddGame = async (game: Omit<Game, 'id'>) => {
+        try {
+            await addGameToFirestore(game); // Add game to Firestore
+            setInventory((prevInventory) => [...prevInventory, { ...game, id: Math.random().toString(36).substring(7) }]); // Add to state temporarily
+        } catch (error) {
+            console.error("Error adding game:", error);
+        }
+    };
+
+    const handleRemoveGame = async (gameId: string) => {
+        try {
+            await deleteGameFromFirestore(gameId); // Delete from Firestore
+            setInventory((prevInventory) => prevInventory.filter((game) => game.id !== gameId)); // Remove from state
+        } catch (error) {
+            console.error("Error removing game:", error);
+        }
+    };
+
 
     useEffect(() => {
         const fetchGenres = async () => {
@@ -274,11 +294,12 @@ const App: React.FC = () => {
                         </select>
                     </div>
                     <ManageGames
-                        genres={genres.map((genre) => genre.name)}
-                        onAddGame={() => {}}
-                        onRemoveGame={() => {}}
-                        games={filteredGames()}
+                        genres={genres.map((genre) => genre.name)} // Genres for the select dropdown
+                        onAddGame={handleAddGame} // Pass add game handler
+                        onRemoveGame={handleRemoveGame} // Pass remove game handler
+                        games={filteredGames()} // Pass the filtered games
                     />
+
                     <h2>Pending Refund Requests</h2>
                     <ul>
                         {refundRequests.map((request) => (
