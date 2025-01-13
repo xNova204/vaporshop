@@ -4,7 +4,17 @@ import GameList from './components/GameList';
 import Wishlist from './components/Wishlist';
 import Login from './components/Login';
 import ManageGames from './components/ManageGames';
-import { fetchGamesFromFirestore, saveWishlistToFirestore, fetchWishlistFromFirestore, saveInventoryToFirestore, fetchInventoryFromFirestore, saveRefundRequest } from './firebase/firestore';
+import {
+    fetchGamesFromFirestore,
+    saveWishlistToFirestore,
+    fetchWishlistFromFirestore,
+    saveInventoryToFirestore,
+    fetchInventoryFromFirestore,
+    saveRefundRequest,
+    fetchPendingRefundRequests,
+    approveRefundRequest,
+    denyRefundRequest
+} from './firebase/firestore';
 import { Game, Genre } from './types/types';
 
 const App: React.FC = () => {
@@ -19,6 +29,7 @@ const App: React.FC = () => {
     const [refundReason, setRefundReason] = useState<string>('');
     const [showRefundPrompt, setShowRefundPrompt] = useState<boolean>(false);
     const [selectedGameForRefund, setSelectedGameForRefund] = useState<Game | null>(null);
+    const [refundRequests, setRefundRequests] = useState<{ id: string; userId: string; gameId: string; reason: string }[]>([]);
 
     useEffect(() => {
         const fetchGenres = async () => {
@@ -57,6 +68,16 @@ const App: React.FC = () => {
             fetchUserWishlist();
         }
     }, [userId, role]);
+
+    useEffect(() => {
+        if (role === 'employee') {
+            const fetchRefundRequests = async () => {
+                const requests = await fetchPendingRefundRequests();
+                setRefundRequests(requests);
+            };
+            fetchRefundRequests();
+        }
+    }, [role]);
 
     useEffect(() => {
         if (userId && wishlist.length > 0) {
@@ -112,6 +133,18 @@ const App: React.FC = () => {
         setUserId(userId);
     };
 
+    const handleApproveRefund = async (requestId: string, userId: string, gameId: string) => {
+        await approveRefundRequest(requestId, userId, gameId);
+        setRefundRequests((prevRequests) => prevRequests.filter((req) => req.id !== requestId));
+        alert("Refund approved successfully.");
+    };
+
+    const handleDenyRefund = async (requestId: string) => {
+        await denyRefundRequest(requestId);
+        setRefundRequests((prevRequests) => prevRequests.filter((req) => req.id !== requestId));
+        alert("Refund denied.");
+    };
+
     const filteredGames = () => {
         const selectedGenreData = genres.find((genre) => genre.name === selectedGenre);
         return selectedGenreData
@@ -147,27 +180,22 @@ const App: React.FC = () => {
             {role === 'employee' && (
                 <>
                     <h2>Manage Games</h2>
-                    <div>
-                        <h3>Select Genre</h3>
-                        <select
-                            value={selectedGenre || ''}
-                            onChange={(e) => setSelectedGenre(e.target.value)}
-                            style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc', width: '100%' }}
-                        >
-                            <option value="">All Genres</option>
-                            {genres.map((genre) => (
-                                <option key={genre.id} value={genre.name}>
-                                    {genre.name}
-                                </option>
-                            ))}
-                        </select>
-                    </div>
                     <ManageGames
                         genres={genres.map((genre) => genre.name)}
                         onAddGame={() => {}}
                         onRemoveGame={() => {}}
                         games={filteredGames()}
                     />
+                    <h2>Pending Refund Requests</h2>
+                    <ul>
+                        {refundRequests.map((request) => (
+                            <li key={request.id}>
+                                User ID: {request.userId}, Game ID: {request.gameId}, Reason: {request.reason}
+                                <button onClick={() => handleApproveRefund(request.id, request.userId, request.gameId)}>Approve</button>
+                                <button onClick={() => handleDenyRefund(request.id)}>Deny</button>
+                            </li>
+                        ))}
+                    </ul>
                 </>
             )}
 
@@ -185,14 +213,14 @@ const App: React.FC = () => {
                             <GameList
                                 games={filteredGames()}
                                 onAddToWishlist={addToWishlist}
-                                onBuyGame={handleAddToInventory} // New Buy Game functionality
+                                onBuyGame={handleAddToInventory}
                             />
                         </>
                     )}
                     <Wishlist
                         games={wishlist}
                         onRemoveFromWishlist={handleRemoveFromWishlist}
-                        onBuyGame={handleAddToInventory} // Pass Buy Game functionality here
+                        onBuyGame={handleAddToInventory}
                     />
                     <h2>Your Inventory</h2>
                     <ul>

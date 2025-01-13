@@ -1,6 +1,15 @@
 import { db } from './firebase'; // Assuming you're using Firebase for the database
 import { Game } from '../types/types';
-import { doc, getDoc, setDoc, collection, getDocs, query, addDoc } from 'firebase/firestore'; // Updated import for addDoc
+import { doc, getDoc, setDoc, collection, getDocs, query, addDoc, updateDoc, DocumentData } from 'firebase/firestore'; // Updated import for addDoc
+
+interface RefundRequest {
+    id: string;
+    userId: string;
+    gameId: string;
+    reason: string;
+    status: 'pending' | 'approved' | 'denied';
+    createdAt: Date;
+}
 
 // Function to save a user's wishlist to Firestore
 export const saveWishlistToFirestore = async (userId: string, wishlist: Game[]) => {
@@ -55,4 +64,53 @@ export const saveRefundRequest = async (userId: string, gameId: string, reason: 
         status: 'pending',
         createdAt: new Date(),
     });
+};
+
+// Function to fetch all pending refund requests
+export const fetchPendingRefundRequests = async (): Promise<RefundRequest[]> => {
+    const refundRequestsCollection = collection(db, 'refundRequests');
+    const q = query(refundRequestsCollection); // Fetch all refund requests
+    const querySnapshot = await getDocs(q);
+    const refundRequests: RefundRequest[] = [];
+
+    querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data() as DocumentData;
+        refundRequests.push({
+            id: docSnap.id,
+            userId: data.userId,
+            gameId: data.gameId,
+            reason: data.reason,
+            status: data.status,
+            createdAt: data.createdAt.toDate(),
+        });
+    });
+
+    return refundRequests.filter((request) => request.status === 'pending'); // Only show pending ones
+};
+
+// Function to approve a refund request
+export const approveRefundRequest = async (
+    requestId: string,
+    userId: string,
+    gameId: string
+): Promise<void> => {
+    const refundRequestRef = doc(db, 'refundRequests', requestId);
+    const inventoryRef = doc(db, 'users', userId);
+
+    // Update refund request status to 'approved'
+    await updateDoc(refundRequestRef, { status: 'approved' });
+
+    // Remove the game from user's inventory
+    const userInventorySnap = await getDoc(inventoryRef);
+    if (userInventorySnap.exists()) {
+        const userInventory = userInventorySnap.data().inventory as Game[];
+        const updatedInventory = userInventory.filter((game) => game.id !== gameId);
+        await setDoc(inventoryRef, { inventory: updatedInventory }, { merge: true });
+    }
+};
+
+// Function to deny a refund request
+export const denyRefundRequest = async (requestId: string): Promise<void> => {
+    const refundRequestRef = doc(db, 'refundRequests', requestId);
+    await updateDoc(refundRequestRef, { status: 'denied' });
 };
