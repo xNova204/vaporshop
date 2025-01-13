@@ -1,6 +1,6 @@
 import { db } from './firebase'; // Assuming you're using Firebase for the database
 import { Game } from '../types/types';
-import { doc, getDoc, setDoc, collection, getDocs, query, addDoc, updateDoc, DocumentData} from 'firebase/firestore'; // Updated import for addDoc
+import { doc, getDoc, setDoc, collection, getDocs, query, addDoc, updateDoc, DocumentData, where} from 'firebase/firestore'; // Updated import for addDoc
 import { FirebaseError } from 'firebase/app';
 
 
@@ -142,4 +142,43 @@ export const approveRefundRequest = async (
 export const denyRefundRequest = async (requestId: string): Promise<void> => {
     const refundRequestRef = doc(db, 'refundRequests', requestId);
     await updateDoc(refundRequestRef, { status: 'denied' });
+};
+
+// Add review to Firestore
+export const addReviewToFirestore = async (gameId: string, userId: string, review: string, rating: number) => {
+    const reviewCollection = collection(db, 'reviews');
+    const newReview = {
+        gameId,
+        userId,
+        review,
+        rating,
+        createdAt: new Date(),
+    };
+
+    try {
+        const docRef = await addDoc(reviewCollection, newReview);
+        console.log("Review submitted with ID: ", docRef.id);
+    } catch (error) {
+        console.error("Error submitting review: ", error);
+    }
+};
+
+// Fetch reviews for a specific game
+export const fetchReviewsForGame = async (gameId: string) => {
+    const reviewsCollection = collection(db, 'reviews');
+    const q = query(reviewsCollection, where("gameId", "==", gameId)); // Filter reviews by game ID
+    const querySnapshot = await getDocs(q);
+    const reviews: { userId: string; review: string; rating: number; createdAt: Date }[] = [];
+
+    querySnapshot.forEach((docSnap) => {
+        const data = docSnap.data();
+        reviews.push({
+            userId: data.userId,
+            review: data.review,
+            rating: data.rating,
+            createdAt: data.createdAt.toDate(),
+        });
+    });
+
+    return reviews;
 };

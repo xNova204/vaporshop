@@ -13,7 +13,9 @@ import {
     saveRefundRequest,
     fetchPendingRefundRequests,
     approveRefundRequest,
-    denyRefundRequest
+    denyRefundRequest,
+    addReviewToFirestore,
+    fetchReviewsForGame
 } from './firebase/firestore';
 import { Game, Genre } from './types/types';
 
@@ -30,6 +32,11 @@ const App: React.FC = () => {
     const [showRefundPrompt, setShowRefundPrompt] = useState<boolean>(false);
     const [selectedGameForRefund, setSelectedGameForRefund] = useState<Game | null>(null);
     const [refundRequests, setRefundRequests] = useState<{ id: string; userId: string; gameId: string; reason: string }[]>([]);
+
+    // State for selected game and reviews
+    const [selectedGame, setSelectedGame] = useState<Game | null>(null);  // New state for selected game
+    const [reviews, setReviews] = useState<{ userId: string; review: string; rating: number; createdAt: Date }[]>([]);
+    const [reviewText, setReviewText] = useState<string>('');  // State for the review input
 
     useEffect(() => {
         const fetchGenres = async () => {
@@ -48,6 +55,18 @@ const App: React.FC = () => {
 
         fetchGenres();
     }, []);
+
+    // Fetch reviews for selected game
+    useEffect(() => {
+        if (selectedGame) {
+            const fetchReviews = async () => {
+                const gameReviews = await fetchReviewsForGame(selectedGame.id);
+                setReviews(gameReviews);
+            };
+
+            fetchReviews();
+        }
+    }, [selectedGame]);
 
     useEffect(() => {
         if (userId && role === 'customer') {
@@ -137,15 +156,11 @@ const App: React.FC = () => {
         }
     };
 
-
-
-
     const handleRefundButtonClick = (game: Game) => {
         console.log("Selected game for refund:", game);  // Log the game object
         setSelectedGameForRefund(game);
         setShowRefundPrompt(true);
     };
-
 
     const handleLogin = (role: 'customer' | 'employee', userId: string) => {
         setRole(role);
@@ -164,6 +179,21 @@ const App: React.FC = () => {
         setRefundRequests((prev) => prev.filter((request) => request.id !== requestId));
     };
 
+    // Handle selecting a game for details and reviews
+    const handleSelectGame = (game: Game) => {
+        setSelectedGame(game);
+    };
+
+    // Handle submitting a review
+    const handleSubmitReview = async () => {
+        if (reviewText && selectedGame && userId) {
+            await addReviewToFirestore(selectedGame.id, userId, reviewText, 5); // Assuming rating is 5
+            setReviewText('');  // Reset the review input
+            setSelectedGame(null);  // Optionally, close the selected game after submission
+        } else {
+            alert('Please provide a review.');
+        }
+    };
 
     const filteredGames = () => {
         const selectedGenreData = genres.find((genre) => genre.name === selectedGenre);
@@ -196,6 +226,34 @@ const App: React.FC = () => {
                     }}
                 />
             </div>
+
+            {/* Display selected game details */}
+            {selectedGame && (
+                <div>
+                    <h2>Game Details</h2>
+                    <p>Name: {selectedGame.name}</p>
+                    <p>Genre: {selectedGame.genre}</p>
+                    <p>Price: {selectedGame.price}</p>
+                    <h3>Reviews</h3>
+                    <ul>
+                        {reviews.map((review, index) => (
+                            <li key={index}>
+                                <p><strong>{review.userId}</strong> ({review.rating} stars):</p>
+                                <p>{review.review}</p>
+                                <p>{review.createdAt.toLocaleString()}</p>
+                            </li>
+                        ))}
+                    </ul>
+                    <textarea
+                        value={reviewText}
+                        onChange={(e) => setReviewText(e.target.value)}
+                        placeholder="Write your review here"
+                        rows={4}
+                        style={{ width: '100%' }}
+                    />
+                    <button onClick={handleSubmitReview}>Submit Review</button>
+                </div>
+            )}
 
             {role === 'employee' && (
                 <>
@@ -237,7 +295,6 @@ const App: React.FC = () => {
                 </>
             )}
 
-
             {role === 'customer' && (
                 <>
                     <h2>Video Game Genres</h2>
@@ -253,6 +310,7 @@ const App: React.FC = () => {
                                 games={filteredGames()}
                                 onAddToWishlist={addToWishlist}
                                 onBuyGame={handleAddToInventory}
+                                onGameSelect={handleSelectGame}
                             />
                         </>
                     )}

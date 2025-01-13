@@ -1,26 +1,29 @@
-// src/components/GameList.tsx
+// GameList.tsx
 import React from 'react';
-import { Game } from '../types/types'; // Import Game type
+import { Game } from '../types/types';
 
 interface GameListProps {
     games: Game[];
     onAddToWishlist: (game: Game) => void;
-    onBuyGame: (game: Game) => void; // New prop for buying a game
+    onBuyGame: (game: Game) => Promise<void>;
+    onGameSelect: (game: Game) => void;  // Add this line
 }
 
-const GameList: React.FC<GameListProps> = ({ games, onAddToWishlist, onBuyGame }) => {
+const GameList: React.FC<GameListProps> = ({ games, onAddToWishlist, onBuyGame, onGameSelect }) => {
     return (
-        <ul>
+        <div>
             {games.map((game) => (
-                <li key={game.id}>
-                    {game.name} - {game.price} ({game.genre})
+                <div key={game.id} style={{ marginBottom: '20px' }}>
+                    <h3>{game.name}</h3>
+                    <p>{game.genre}</p>
+                    <p>{game.price}</p>
+                    <button onClick={() => onGameSelect(game)}>View Details</button> {/* Add this button */}
                     <button onClick={() => onAddToWishlist(game)}>Add to Wishlist</button>
-                    <button onClick={() => onBuyGame(game)}>Buy Game</button> {/* Buy button */}
-                </li>
+                    <button onClick={() => onBuyGame(game)}>Buy Game</button>
+                </div>
             ))}
-        </ul>
+        </div>
     );
 };
-
 
 export default GameList;
