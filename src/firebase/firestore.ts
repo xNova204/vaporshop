@@ -1,6 +1,8 @@
 import { db } from './firebase'; // Assuming you're using Firebase for the database
 import { Game } from '../types/types';
-import { doc, getDoc, setDoc, collection, getDocs, query, addDoc, updateDoc, DocumentData } from 'firebase/firestore'; // Updated import for addDoc
+import { doc, getDoc, setDoc, collection, getDocs, query, addDoc, updateDoc, DocumentData} from 'firebase/firestore'; // Updated import for addDoc
+import { FirebaseError } from 'firebase/app';
+
 
 interface RefundRequest {
     id: string;
@@ -50,21 +52,46 @@ export const fetchGamesFromFirestore = async (): Promise<Game[]> => {
     const querySnapshot = await getDocs(q);
     const games: Game[] = [];
     querySnapshot.forEach((doc) => {
-        games.push(doc.data() as Game);
+        const game = doc.data() as Game;
+        game.id = doc.id;  // Ensure the game object includes the ID
+        games.push(game);
     });
     return games;
 };
 
+
 // Function to save a refund request to Firestore
 export const saveRefundRequest = async (userId: string, gameId: string, reason: string) => {
-    await addDoc(collection(db, 'refundRequests'), {
-        userId,
-        gameId,
-        reason,
-        status: 'pending',
-        createdAt: new Date(),
-    });
+    try {
+        // Ensure gameId is defined before proceeding
+        if (!gameId) {
+            throw new Error("Game ID is missing.");
+        }
+
+        const refundRequestCollection = collection(db, 'refundRequests');
+        const newRequest = {
+            userId,
+            gameId,
+            reason,
+            status: 'pending',
+            createdAt: new Date(),
+        };
+
+        // Add new request to Firestore
+        const docRef = await addDoc(refundRequestCollection, newRequest);
+        console.log("Refund request submitted with ID: ", docRef.id); // Log the ID for debugging
+    } catch (error: unknown) {
+        if (error instanceof FirebaseError) {
+            console.error("Error saving refund request:", error.message); // Specific error message for FirebaseError
+            alert("Error saving refund request: " + error.message); // Alert the error message
+        } else {
+            console.error("Unexpected error:", error); // Catch any non-Firebase errors
+            alert("Unexpected error occurred: " + error);
+        }
+    }
 };
+
+
 
 // Function to fetch all pending refund requests
 export const fetchPendingRefundRequests = async (): Promise<RefundRequest[]> => {
@@ -85,8 +112,10 @@ export const fetchPendingRefundRequests = async (): Promise<RefundRequest[]> => 
         });
     });
 
+    console.log("Fetched refund requests:", refundRequests); // Log fetched requests for debugging
     return refundRequests.filter((request) => request.status === 'pending'); // Only show pending ones
 };
+
 
 // Function to approve a refund request
 export const approveRefundRequest = async (

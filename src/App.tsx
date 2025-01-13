@@ -116,16 +116,36 @@ const App: React.FC = () => {
             alert("Please provide a reason for the refund.");
             return;
         }
-        await saveRefundRequest(userId!, game.id, reason);
-        alert("Your refund request has been submitted and is pending approval.");
-        setShowRefundPrompt(false); // Close the refund reason prompt
-        setRefundReason(''); // Reset reason
+
+        // Log the gameId to ensure it's valid
+        console.log("Game ID:", game.id);
+
+        try {
+            // Check if gameId is present before making the request
+            if (!game.id) {
+                alert("Game ID is missing.");
+                return;
+            }
+
+            await saveRefundRequest(userId!, game.id, reason);
+            alert("Your refund request has been submitted and is pending approval.");
+            setShowRefundPrompt(false); // Close the refund reason prompt
+            setRefundReason(''); // Reset reason
+        } catch (error) {
+            console.error("Error submitting refund request:", error);
+            alert("There was an error submitting your refund request. Please try again.");
+        }
     };
 
+
+
+
     const handleRefundButtonClick = (game: Game) => {
+        console.log("Selected game for refund:", game);  // Log the game object
         setSelectedGameForRefund(game);
         setShowRefundPrompt(true);
     };
+
 
     const handleLogin = (role: 'customer' | 'employee', userId: string) => {
         setRole(role);
@@ -135,15 +155,15 @@ const App: React.FC = () => {
 
     const handleApproveRefund = async (requestId: string, userId: string, gameId: string) => {
         await approveRefundRequest(requestId, userId, gameId);
-        setRefundRequests((prevRequests) => prevRequests.filter((req) => req.id !== requestId));
-        alert("Refund approved successfully.");
+        setRefundRequests((prev) => prev.filter((request) => request.id !== requestId));
     };
+
 
     const handleDenyRefund = async (requestId: string) => {
         await denyRefundRequest(requestId);
-        setRefundRequests((prevRequests) => prevRequests.filter((req) => req.id !== requestId));
-        alert("Refund denied.");
+        setRefundRequests((prev) => prev.filter((request) => request.id !== requestId));
     };
+
 
     const filteredGames = () => {
         const selectedGenreData = genres.find((genre) => genre.name === selectedGenre);
@@ -180,6 +200,21 @@ const App: React.FC = () => {
             {role === 'employee' && (
                 <>
                     <h2>Manage Games</h2>
+                    <div>
+                        <h3>Select Genre</h3>
+                        <select
+                            value={selectedGenre || ''}
+                            onChange={(e) => setSelectedGenre(e.target.value)}
+                            style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc', width: '100%' }}
+                        >
+                            <option value="">All Genres</option>
+                            {genres.map((genre) => (
+                                <option key={genre.id} value={genre.name}>
+                                    {genre.name}
+                                </option>
+                            ))}
+                        </select>
+                    </div>
                     <ManageGames
                         genres={genres.map((genre) => genre.name)}
                         onAddGame={() => {}}
@@ -190,14 +225,18 @@ const App: React.FC = () => {
                     <ul>
                         {refundRequests.map((request) => (
                             <li key={request.id}>
-                                User ID: {request.userId}, Game ID: {request.gameId}, Reason: {request.reason}
-                                <button onClick={() => handleApproveRefund(request.id, request.userId, request.gameId)}>Approve</button>
+                                Game ID: {request.gameId}, User ID: {request.userId}
+                                <p>Reason: {request.reason}</p>
+                                <button onClick={() => handleApproveRefund(request.id, request.userId, request.gameId)}>
+                                    Approve
+                                </button>
                                 <button onClick={() => handleDenyRefund(request.id)}>Deny</button>
                             </li>
                         ))}
                     </ul>
                 </>
             )}
+
 
             {role === 'customer' && (
                 <>
