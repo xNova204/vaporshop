@@ -53,57 +53,85 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     };
 
     return (
-        <div>
-            <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
-            <div>
-                <input
-                    type="email"
-                    placeholder="Email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                />
-            </div>
-            <div>
-                <input
-                    type="password"
-                    placeholder="Password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                />
-            </div>
-            <div>
-                <label>
+        <div style={{
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            height: '100vh',
+            backgroundColor: '#f0f0f0'
+        }}>
+            <div style={{
+                padding: '20px',
+                backgroundColor: 'white',
+                borderRadius: '8px',
+                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
+                width: '300px',
+                textAlign: 'center' // Optional: Center text inside the form
+            }}>
+                <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
+                <div>
                     <input
-                        type="radio"
-                        value="customer"
-                        checked={role === 'customer'}
-                        onChange={() => setRole('customer')}
+                        type="email"
+                        placeholder="Email"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        style={{ width: '100%', padding: '10px', margin: '10px 0', borderRadius: '4px', border: '1px solid #ddd' }}
                     />
-                    Customer
-                </label>
-                <label>
+                </div>
+                <div>
                     <input
-                        type="radio"
-                        value="employee"
-                        checked={role === 'employee'}
-                        onChange={() => setRole('employee')}
+                        type="password"
+                        placeholder="Password"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        style={{ width: '100%', padding: '10px', margin: '10px 0', borderRadius: '4px', border: '1px solid #ddd' }}
                     />
-                    Employee
-                </label>
+                </div>
+                <div>
+                    <label style={{ marginRight: '10px', color: '#333' }}> {/* Set label color */}
+                        <input
+                            type="radio"
+                            value="customer"
+                            checked={role === 'customer'}
+                            onChange={() => setRole('customer')}
+                        />
+                        Customer
+                    </label>
+                    <label style={{ color: '#333' }}> {/* Set label color */}
+                        <input
+                            type="radio"
+                            value="employee"
+                            checked={role === 'employee'}
+                            onChange={() => setRole('employee')}
+                        />
+                        Employee
+                    </label>
+                </div>
+                {error && <p style={{ color: 'red' }}>{error}</p>}
+                <button
+                    onClick={handleLoginOrSignUp}
+                    style={{ width: '100%', padding: '10px', marginTop: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px' }}
+                >
+                    {isSignUp ? 'Sign Up' : 'Login'}
+                </button>
+                <button
+                    style={{
+                        width: '100%',
+                        padding: '10px',
+                        marginTop: '10px',
+                        backgroundColor: '#f44336',
+                        color: 'white',
+                        border: 'none',
+                        borderRadius: '4px'
+                    }}
+                    onClick={() => {
+                        setIsSignUp(!isSignUp);
+                        setError('');
+                    }}
+                >
+                    {isSignUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
+                </button>
             </div>
-            {error && <p style={{ color: 'red' }}>{error}</p>}
-            <button onClick={handleLoginOrSignUp}>
-                {isSignUp ? 'Sign Up' : 'Login'}
-            </button>
-            <button
-                style={{ marginLeft: '10px' }}
-                onClick={() => {
-                    setIsSignUp(!isSignUp);
-                    setError('');
-                }}
-            >
-                {isSignUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
-            </button>
         </div>
     );
 };
