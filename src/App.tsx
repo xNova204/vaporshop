@@ -38,6 +38,8 @@ const App: React.FC = () => {
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);  // New state for selected game
     const [reviews, setReviews] = useState<{ userId: string; review: string; rating: number; createdAt: Date }[]>([]);
     const [reviewText, setReviewText] = useState<string>('');  // State for the review input
+    const [userEmail, setUserEmail] = useState<string>(''); // store email for greeting
+
 
     const handleAddGame = async (game: Omit<Game, 'id'>) => {
         try {
@@ -48,6 +50,9 @@ const App: React.FC = () => {
         }
     };
 
+    const getUsername = () => {
+        return userEmail ? userEmail.split('@')[0] : '';
+    };
 
 
     const handleRemoveGame = async (gameId: string) => {
@@ -187,10 +192,11 @@ const App: React.FC = () => {
         setShowRefundPrompt(true);
     };
 
-    const handleLogin = (role: 'customer' | 'employee', userId: string) => {
+    const handleLogin = (role: 'customer' | 'employee', userId: string, email: string) => {
         setRole(role);
         setLoggedIn(true);
         setUserId(userId);
+        setUserEmail(email);
     };
 
     const handleApproveRefund = async (requestId: string, userId: string, gameId: string) => {
@@ -246,12 +252,55 @@ const App: React.FC = () => {
 
 
     if (!loggedIn) {
-        return <Login onLogin={(role, userId) => handleLogin(role, userId)} />;
+        return <Login onLogin={(role, userId, email) => handleLogin(role, userId, email)} />;
     }
 
+    const styles: { [key: string]: React.CSSProperties } = {
+        container: {
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'flex-start',
+            paddingTop: '40px',
+            fontFamily: 'Arial, sans-serif',
+            background: 'linear-gradient(135deg, #8e44ad, #c39bd3)',
+            minHeight: '100vh',
+            color: '#fff',
+            boxSizing: 'border-box',
+            width: '100vw'
+        },
+        inner: {
+            width: '90%',
+            maxWidth: '1000px',
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center'
+        },
+        searchInput: {
+            width: '100%',
+            padding: '10px',
+            borderRadius: '25px',
+            border: '2px solid #6c3483',
+            marginBottom: '20px'
+        },
+        button: {
+            padding: '10px 15px',
+            margin: '5px',
+            borderRadius: '8px',
+            border: 'none',
+            cursor: 'pointer',
+            backgroundColor: '#6c3483',
+            color: 'white'
+        }
+    };
+
+
+
+
     return (
-        <div style={{ padding: '20px', fontFamily: 'Arial, sans-serif' }}>
-            <h1>Welcome, {role === 'customer' ? 'Customer' : 'Employee'}!</h1>
+        <div style={styles.container}>
+            <div style={{ width: '800px', maxWidth: '95%' }}>
+
+            <h1>Welcome, {role === 'customer' ? getUsername() : 'Employee'}!</h1>
 
             <div style={{ marginBottom: '20px' }}>
                 <input
@@ -259,13 +308,9 @@ const App: React.FC = () => {
                     placeholder="Search games..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    style={{
-                        width: '100%',
-                        padding: '10px',
-                        borderRadius: '5px',
-                        border: '1px solid #ccc',
-                    }}
+                    style={styles.searchInput}
                 />
+
             </div>
 
             {/* Display selected game details */}
@@ -292,7 +337,7 @@ const App: React.FC = () => {
                         rows={4}
                         style={{ width: '100%' }}
                     />
-                    <button onClick={handleSubmitReview}>Submit Review</button>
+                    <button style={styles.button} onClick={handleSubmitReview}>Submit Review</button>
                 </div>
             )}
 
@@ -327,10 +372,10 @@ const App: React.FC = () => {
                             <li key={request.id}>
                                 Game ID: {request.gameId}, User ID: {request.userId}
                                 <p>Reason: {request.reason}</p>
-                                <button onClick={() => handleApproveRefund(request.id, request.userId, request.gameId)}>
+                                <button style={styles.button} onClick={() => handleApproveRefund(request.id, request.userId, request.gameId)}>
                                     Approve
                                 </button>
-                                <button onClick={() => handleDenyRefund(request.id)}>Deny</button>
+                                <button style={styles.button} onClick={() => handleDenyRefund(request.id)}>Deny</button>
                             </li>
                         ))}
                     </ul>
@@ -379,7 +424,7 @@ const App: React.FC = () => {
                         {inventory.map((game) => (
                             <li key={game.id}>
                                 {game.name} - {game.price} ({game.genre})
-                                <button onClick={() => handleRefundButtonClick(game)}>Request Refund</button>
+                                <button style={styles.button} onClick={() => handleRefundButtonClick(game)}>Request Refund</button>
                             </li>
                         ))}
                     </ul>
@@ -397,10 +442,11 @@ const App: React.FC = () => {
                         rows={4}
                         style={{ width: '100%' }}
                     />
-                    <button onClick={() => handleRequestRefund(selectedGameForRefund, refundReason)}>Submit Request</button>
-                    <button onClick={() => setShowRefundPrompt(false)}>Cancel</button>
+                    <button style={styles.button} onClick={() => handleRequestRefund(selectedGameForRefund, refundReason)}>Submit Request</button>
+                    <button style={styles.button} onClick={() => setShowRefundPrompt(false)}>Cancel</button>
                 </div>
             )}
+            </div>
         </div>
     );
 };

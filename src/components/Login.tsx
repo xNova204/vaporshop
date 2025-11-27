@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
 
 interface LoginProps {
-    onLogin: (role: 'customer' | 'employee', userId: string) => void;
+    onLogin: (role: 'customer' | 'employee', userId: string, email: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
@@ -20,51 +20,91 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
 
         try {
+            let userCredential;
             if (isSignUp) {
-                const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                onLogin(role, userCredential.user.uid);
+                userCredential = await createUserWithEmailAndPassword(auth, email, password);
             } else {
-                const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                onLogin(role, userCredential.user.uid);
+                userCredential = await signInWithEmailAndPassword(auth, email, password);
             }
-        } catch (error: unknown) {
-            if (error instanceof Error) {
-                setError(error.message || 'An unknown error occurred.');
+            onLogin(role, userCredential.user.uid, email);
+        } catch (err: unknown) {
+            if (err instanceof Error) {
+                setError(err.message || 'An unknown error occurred.');
             } else {
                 setError('An unknown error occurred.');
             }
         }
     };
 
-    return (
-        <div
-            style={{
-                position: "fixed",
-                top: 0,
-                left: 0,
-                width: "100vw",
-                height: "100vh",
-                display: "flex",
-                justifyContent: "center",
-                alignItems: "center",
-                background: "linear-gradient(135deg, #e3e3e3, #ffffff)",
-                zIndex: 9999
-            }}
-        >
-            <div
-                style={{
-                    padding: "40px",
-                    backgroundColor: "white",
-                    borderRadius: "12px",
-                    boxShadow: "0 8px 20px rgba(0, 0, 0, 0.15)",
-                    width: "360px",
-                    textAlign: "center",
-                    boxSizing: "border-box",
-                }}
-            >
+    // Type-safe styles
+    const styles = {
+        container: {
+            position: 'fixed',
+            top: 0,
+            left: 0,
+            width: '100vw',
+            height: '100vh',
+            display: 'flex',
+            justifyContent: 'center',
+            alignItems: 'center',
+            background: 'linear-gradient(135deg, #8e44ad, #c39bd3)',
+        },
+        card: {
+            padding: '40px',
+            backgroundColor: '#6c3483',
+            borderRadius: '12px',
+            boxShadow: '0 8px 20px rgba(0,0,0,0.2)',
+            width: '360px',
+            textAlign: 'center' as const,
+            boxSizing: 'border-box' as const,
+            color: '#fff',
+        },
+        input: {
+            width: '100%',
+            padding: '12px',
+            margin: '12px 0',
+            borderRadius: '8px',
+            border: '1px solid #ccc',
+            fontSize: '15px',
+            boxSizing: 'border-box' as const,
+        },
+        radioLabel: {
+            marginRight: '15px',
+        },
+        button: {
+            width: '100%',
+            padding: '12px',
+            marginTop: '15px',
+            backgroundColor: '#9b59b6',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '16px',
+            cursor: 'pointer',
+        },
+        toggleButton: {
+            width: '100%',
+            padding: '12px',
+            marginTop: '10px',
+            backgroundColor: '#8e44ad',
+            color: 'white',
+            border: 'none',
+            borderRadius: '8px',
+            fontSize: '15px',
+            cursor: 'pointer',
+        },
+        error: {
+            color: 'red',
+            marginTop: '5px',
+            fontSize: '14px',
+        },
+    } as const;
 
-                <h2 style={{ marginBottom: "20px", color: "#333" }}>
-                    {isSignUp ? "Create an Account" : "Welcome Back"}
+    return (
+        <div style={styles.container}>
+            <div style={styles.card}>
+                <h2 style={{ marginBottom: '20px' }}>
+                    {isSignUp ? 'Create an Account' : 'Welcome Back'}
                 </h2>
 
                 {/* Email */}
@@ -73,15 +113,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     placeholder="Email"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    style={{
-                        width: "100%",
-                        padding: "12px",
-                        margin: "12px 0",
-                        borderRadius: "8px",
-                        border: "1px solid #ccc",
-                        fontSize: "15px",
-                        boxSizing: "border-box",
-                    }}
+                    style={styles.input}
                 />
 
                 {/* Password */}
@@ -90,80 +122,49 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     placeholder="Password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    style={{
-                        width: "100%",
-                        padding: "12px",
-                        margin: "12px 0",
-                        borderRadius: "8px",
-                        border: "1px solid #ccc",
-                        fontSize: "15px",
-                        boxSizing: "border-box",
-                    }}
+                    style={styles.input}
                 />
 
-                <div style={{ marginTop: "10px", marginBottom: "10px", color: "#444" }}>
-                    <label style={{ marginRight: "15px" }}>
+                {/* Role Selection */}
+                <div style={{ marginTop: '10px', marginBottom: '10px', color: '#fff' }}>
+                    <label style={styles.radioLabel}>
                         <input
                             type="radio"
                             value="customer"
-                            checked={role === "customer"}
-                            onChange={() => setRole("customer")}
-                            style={{ marginRight: "4px" }}
+                            checked={role === 'customer'}
+                            onChange={() => setRole('customer')}
+                            style={{ marginRight: '4px' }}
                         />
                         Customer
                     </label>
-
                     <label>
                         <input
                             type="radio"
                             value="employee"
-                            checked={role === "employee"}
-                            onChange={() => setRole("employee")}
-                            style={{ marginRight: "4px" }}
+                            checked={role === 'employee'}
+                            onChange={() => setRole('employee')}
+                            style={{ marginRight: '4px' }}
                         />
                         Employee
                     </label>
                 </div>
 
-                {error && (
-                    <p style={{ color: "red", marginTop: "5px", fontSize: "14px" }}>{error}</p>
-                )}
+                {error && <p style={styles.error}>{error}</p>}
 
-                <button
-                    onClick={handleLoginOrSignUp}
-                    style={{
-                        width: "100%",
-                        padding: "12px",
-                        marginTop: "15px",
-                        backgroundColor: "#4CAF50",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        fontSize: "16px",
-                        cursor: "pointer",
-                    }}
-                >
-                    {isSignUp ? "Sign Up" : "Log In"}
+                <button style={styles.button} onClick={handleLoginOrSignUp}>
+                    {isSignUp ? 'Sign Up' : 'Log In'}
                 </button>
 
                 <button
-                    style={{
-                        width: "100%",
-                        padding: "12px",
-                        marginTop: "10px",
-                        backgroundColor: "#1976d2",
-                        color: "white",
-                        border: "none",
-                        borderRadius: "8px",
-                        fontSize: "15px",
-                        cursor: "pointer",
-                    }}
+                    style={styles.toggleButton}
                     onClick={() => {
                         setIsSignUp(!isSignUp);
-                        setError("");
+                        setError('');
                     }}
                 >
-                    {isSignUp ? "Already have an account? Log In" : "Don't have an account? Sign Up"}
+                    {isSignUp
+                        ? 'Already have an account? Log In'
+                        : "Don't have an account? Sign Up"}
                 </button>
             </div>
         </div>
