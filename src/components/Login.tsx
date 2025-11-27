@@ -9,9 +9,8 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
     const [role, setRole] = useState<'customer' | 'employee'>('customer');
-    const [isSignUp, setIsSignUp] = useState(false); // Toggle between login and sign-up
-    const [error, setError] = useState<string>(''); // Specify type as string
-
+    const [isSignUp, setIsSignUp] = useState(false);
+    const [error, setError] = useState<string>('');
     const auth = getAuth();
 
     const handleLoginOrSignUp = async () => {
@@ -22,30 +21,15 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         try {
             if (isSignUp) {
-                // Create a new account
                 const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-                const userId = userCredential.user.uid; // Get the user's unique ID
-                console.log('New account created:', { email, role, userId });
-                onLogin(role, userId);
+                onLogin(role, userCredential.user.uid);
             } else {
-                // Log in with existing account
                 const userCredential = await signInWithEmailAndPassword(auth, email, password);
-                const userId = userCredential.user.uid; // Get the user's unique ID
-                console.log('Logged in successfully:', { email, role, userId });
-                onLogin(role, userId);
+                onLogin(role, userCredential.user.uid);
             }
         } catch (error: unknown) {
-            console.error(error);
-
-            // Handle the error type correctly without using `any`
             if (error instanceof Error) {
-                if (error.message.includes('user-not-found')) {
-                    setError('No account found with this email. Please sign up.');
-                } else if (error.message.includes('wrong-password')) {
-                    setError('Incorrect password. Please try again.');
-                } else {
-                    setError(error.message || 'An unknown error occurred.');
-                }
+                setError(error.message || 'An unknown error occurred.');
             } else {
                 setError('An unknown error occurred.');
             }
@@ -53,83 +37,133 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
     };
 
     return (
-        <div style={{
-            display: 'flex',
-            justifyContent: 'center',
-            alignItems: 'center',
-            height: '100vh',
-            backgroundColor: '#f0f0f0'
-        }}>
-            <div style={{
-                padding: '20px',
-                backgroundColor: 'white',
-                borderRadius: '8px',
-                boxShadow: '0 4px 6px rgba(0, 0, 0, 0.1)',
-                width: '300px',
-                textAlign: 'center' // Optional: Center text inside the form
-            }}>
-                <h2>{isSignUp ? 'Sign Up' : 'Login'}</h2>
-                <div>
-                    <input
-                        type="email"
-                        placeholder="Email"
-                        value={email}
-                        onChange={(e) => setEmail(e.target.value)}
-                        style={{ width: '100%', padding: '10px', margin: '10px 0', borderRadius: '4px', border: '1px solid #ddd' }}
-                    />
-                </div>
-                <div>
-                    <input
-                        type="password"
-                        placeholder="Password"
-                        value={password}
-                        onChange={(e) => setPassword(e.target.value)}
-                        style={{ width: '100%', padding: '10px', margin: '10px 0', borderRadius: '4px', border: '1px solid #ddd' }}
-                    />
-                </div>
-                <div>
-                    <label style={{ marginRight: '10px', color: '#333' }}> {/* Set label color */}
+        <div
+            style={{
+                position: "fixed",
+                top: 0,
+                left: 0,
+                width: "100vw",
+                height: "100vh",
+                display: "flex",
+                justifyContent: "center",
+                alignItems: "center",
+                background: "linear-gradient(135deg, #e3e3e3, #ffffff)",
+                zIndex: 9999
+            }}
+        >
+            <div
+                style={{
+                    padding: "40px",
+                    backgroundColor: "white",
+                    borderRadius: "12px",
+                    boxShadow: "0 8px 20px rgba(0, 0, 0, 0.15)",
+                    width: "360px",
+                    textAlign: "center",
+                    boxSizing: "border-box",
+                }}
+            >
+
+                <h2 style={{ marginBottom: "20px", color: "#333" }}>
+                    {isSignUp ? "Create an Account" : "Welcome Back"}
+                </h2>
+
+                {/* Email */}
+                <input
+                    type="email"
+                    placeholder="Email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    style={{
+                        width: "100%",
+                        padding: "12px",
+                        margin: "12px 0",
+                        borderRadius: "8px",
+                        border: "1px solid #ccc",
+                        fontSize: "15px",
+                        boxSizing: "border-box",
+                    }}
+                />
+
+                {/* Password */}
+                <input
+                    type="password"
+                    placeholder="Password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    style={{
+                        width: "100%",
+                        padding: "12px",
+                        margin: "12px 0",
+                        borderRadius: "8px",
+                        border: "1px solid #ccc",
+                        fontSize: "15px",
+                        boxSizing: "border-box",
+                    }}
+                />
+
+                <div style={{ marginTop: "10px", marginBottom: "10px", color: "#444" }}>
+                    <label style={{ marginRight: "15px" }}>
                         <input
                             type="radio"
                             value="customer"
-                            checked={role === 'customer'}
-                            onChange={() => setRole('customer')}
+                            checked={role === "customer"}
+                            onChange={() => setRole("customer")}
+                            style={{ marginRight: "4px" }}
                         />
                         Customer
                     </label>
-                    <label style={{ color: '#333' }}> {/* Set label color */}
+
+                    <label>
                         <input
                             type="radio"
                             value="employee"
-                            checked={role === 'employee'}
-                            onChange={() => setRole('employee')}
+                            checked={role === "employee"}
+                            onChange={() => setRole("employee")}
+                            style={{ marginRight: "4px" }}
                         />
                         Employee
                     </label>
                 </div>
-                {error && <p style={{ color: 'red' }}>{error}</p>}
+
+                {error && (
+                    <p style={{ color: "red", marginTop: "5px", fontSize: "14px" }}>{error}</p>
+                )}
+
                 <button
                     onClick={handleLoginOrSignUp}
-                    style={{ width: '100%', padding: '10px', marginTop: '10px', backgroundColor: '#4CAF50', color: 'white', border: 'none', borderRadius: '4px' }}
+                    style={{
+                        width: "100%",
+                        padding: "12px",
+                        marginTop: "15px",
+                        backgroundColor: "#4CAF50",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        fontSize: "16px",
+                        cursor: "pointer",
+                    }}
                 >
-                    {isSignUp ? 'Sign Up' : 'Login'}
+                    {isSignUp ? "Sign Up" : "Log In"}
                 </button>
+
                 <button
                     style={{
-                        width: '100%',
-                        padding: '10px',
-                        marginTop: '10px',
-                        backgroundColor: '#f44336',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '4px'
+                        width: "100%",
+                        padding: "12px",
+                        marginTop: "10px",
+                        backgroundColor: "#1976d2",
+                        color: "white",
+                        border: "none",
+                        borderRadius: "8px",
+                        fontSize: "15px",
+                        cursor: "pointer",
                     }}
                     onClick={() => {
                         setIsSignUp(!isSignUp);
-                        setError('');
+                        setError("");
                     }}
                 >
-                    {isSignUp ? 'Already have an account? Log In' : "Don't have an account? Sign Up"}
+                    {isSignUp ? "Already have an account? Log In" : "Don't have an account? Sign Up"}
                 </button>
             </div>
         </div>

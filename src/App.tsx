@@ -345,9 +345,17 @@ const App: React.FC = () => {
                         onGenreSelect={(genre) => setSelectedGenre(genre)}
                         selectedGenre={selectedGenre}
                     />
-                    {selectedGenre && (
+
+                    {/* Show GameList when either a genre is selected OR the user is searching */}
+                    { (selectedGenre || searchQuery.trim() !== '') ? (
                         <>
-                            <h2>Games in {selectedGenre} Genre</h2>
+                            {/* Heading: show search info when searching, otherwise show selected genre */}
+                            {searchQuery.trim() !== '' ? (
+                                <h2>Search results for "{searchQuery}"</h2>
+                            ) : (
+                                <h2>Games in {selectedGenre} Genre</h2>
+                            )}
+
                             <GameList
                                 games={filteredGames()}
                                 onAddToWishlist={addToWishlist}
@@ -355,12 +363,17 @@ const App: React.FC = () => {
                                 onGameSelect={handleSelectGame}
                             />
                         </>
+                    ) : (
+                        // Optional helpful hint when nothing selected and not searching
+                        <p style={{ color: '#666' }}>Select a genre or type in the search bar to find games.</p>
                     )}
+
                     <Wishlist
                         games={wishlist}
                         onRemoveFromWishlist={handleRemoveFromWishlist}
                         onBuyGame={handleAddToInventory}
                     />
+
                     <h2>Your Inventory</h2>
                     <ul>
                         {inventory.map((game) => (
@@ -372,6 +385,7 @@ const App: React.FC = () => {
                     </ul>
                 </>
             )}
+
 
             {showRefundPrompt && selectedGameForRefund && (
                 <div>
