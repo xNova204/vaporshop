@@ -4,6 +4,7 @@ export interface Game {
     name: string;
     price: string;
     genre: string;
+    imageUrl?: string;
 }
 
 export interface Genre {

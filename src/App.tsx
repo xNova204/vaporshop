@@ -221,13 +221,29 @@ const App: React.FC = () => {
     };
 
     const filteredGames = () => {
-        const selectedGenreData = genres.find((genre) => genre.name === selectedGenre);
-        return selectedGenreData
-            ? selectedGenreData.games.filter((game) =>
-                game.name.toLowerCase().includes(searchQuery.toLowerCase())
-            )
-            : [];
+        const query = searchQuery.toLowerCase().trim();
+
+        if (query !== "") {
+            // Search across all games, ignoring the genre filter
+            return genres.flatMap((genre) =>
+                genre.games.filter((game) =>
+                    game.name.toLowerCase().includes(query)
+                )
+            );
+        }
+
+        // No search text — filter by selected genre only
+        if (selectedGenre) {
+            const selectedGenreData = genres.find(
+                (genre) => genre.name === selectedGenre
+            );
+            return selectedGenreData ? selectedGenreData.games : [];
+        }
+
+        // No search and no genre selected
+        return [];
     };
+
 
     if (!loggedIn) {
         return <Login onLogin={(role, userId) => handleLogin(role, userId)} />;

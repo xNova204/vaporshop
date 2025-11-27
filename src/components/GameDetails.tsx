@@ -12,21 +12,20 @@ interface Review {
 
 interface GameDetailsProps {
     game: Game;
-    userId: string; // Assume you have a userId prop when logged in as a customer
+    userId: string;
 }
 
 const GameDetails: React.FC<GameDetailsProps> = ({ game, userId }) => {
-    const [reviews, setReviews] = useState<Review[]>([]); // To store reviews with specific types
+    const [reviews, setReviews] = useState<Review[]>([]);
     const [reviewText, setReviewText] = useState<string>('');
-    const [rating, setRating] = useState<number>(5); // Default rating 5
-    const [showReviews, setShowReviews] = useState<boolean>(false); // Toggle reviews display
+    const [rating, setRating] = useState<number>(5);
+    const [showReviews, setShowReviews] = useState<boolean>(false);
 
     useEffect(() => {
         const fetchReviews = async () => {
             const reviewsData = await fetchReviewsForGame(game.id);
             setReviews(reviewsData);
         };
-
         fetchReviews();
     }, [game.id]);
 
@@ -35,13 +34,11 @@ const GameDetails: React.FC<GameDetailsProps> = ({ game, userId }) => {
             alert("Please enter a review.");
             return;
         }
-
         try {
             await addReviewToFirestore(game.id, userId, reviewText, rating);
             setReviewText('');
-            setRating(5); // Reset rating
+            setRating(5);
             alert("Your review has been submitted.");
-            // Re-fetch reviews after submitting
             const updatedReviews = await fetchReviewsForGame(game.id);
             setReviews(updatedReviews);
         } catch (error) {
@@ -52,9 +49,16 @@ const GameDetails: React.FC<GameDetailsProps> = ({ game, userId }) => {
     return (
         <div>
             <h3>{game.name}</h3>
-            {/* Removed game.description, as it's not part of the game model anymore */}
+            {game.imageUrl && (
+                <img
+                    src={game.imageUrl}
+                    alt={game.name}
+                    style={{ width: "200px", display: "block", marginBottom: "10px" }}
+                />
+            )}
+            <p>{game.genre}</p>
+            <p>{game.price}</p>
 
-            {/* Review Form */}
             <div>
                 <textarea
                     value={reviewText}
@@ -66,22 +70,16 @@ const GameDetails: React.FC<GameDetailsProps> = ({ game, userId }) => {
                 <div>
                     <label>Rating: </label>
                     <select value={rating} onChange={(e) => setRating(Number(e.target.value))}>
-                        <option value={1}>1</option>
-                        <option value={2}>2</option>
-                        <option value={3}>3</option>
-                        <option value={4}>4</option>
-                        <option value={5}>5</option>
+                        {[1,2,3,4,5].map(num => <option key={num} value={num}>{num}</option>)}
                     </select>
                 </div>
                 <button onClick={handleSubmitReview}>Submit Review</button>
             </div>
 
-            {/* Show Reviews Button */}
             <button onClick={() => setShowReviews(!showReviews)}>
                 {showReviews ? "Hide Reviews" : "Show Reviews"}
             </button>
 
-            {/* Display Reviews */}
             {showReviews && (
                 <div>
                     {reviews.length > 0 ? (
