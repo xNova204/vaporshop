@@ -193,19 +193,27 @@ export const addReviewToFirestore = async (gameId: string, userId: string, revie
 // Fetch reviews for a specific game
 export const fetchReviewsForGame = async (gameId: string) => {
     const reviewsCollection = collection(db, 'reviews');
-    const q = query(reviewsCollection, where("gameId", "==", gameId)); // Filter reviews by game ID
+    const q = query(reviewsCollection, where("gameId", "==", gameId));
     const querySnapshot = await getDocs(q);
-    const reviews: { userId: string; review: string; rating: number; createdAt: Date }[] = [];
 
-    querySnapshot.forEach((docSnap) => {
+    const reviews: { userId: string; username: string; review: string; rating: number; createdAt: Date }[] = [];
+
+    for (const docSnap of querySnapshot.docs) {
         const data = docSnap.data();
+        const userId = data.userId;
+
+        // Fetch the user's document to get their email/username
+        const userDoc = await getDoc(doc(db, 'users', userId));
+        const username = userDoc.exists() ? (userDoc.data().email as string).split('@')[0] : 'Unknown';
+
         reviews.push({
-            userId: data.userId,
+            userId,
+            username,
             review: data.review,
             rating: data.rating,
             createdAt: data.createdAt.toDate(),
         });
-    });
+    }
 
     return reviews;
 };
