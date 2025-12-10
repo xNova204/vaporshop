@@ -351,7 +351,6 @@ const App: React.FC = () => {
                             onChange={(e) => setSelectedGenre(e.target.value)}
                             style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc', width: '100%' }}
                         >
-                            <option value="">All Genres</option>
                             {genres.map((genre) => (
                                 <option key={genre.id} value={genre.name}>
                                     {genre.name}
@@ -410,7 +409,7 @@ const App: React.FC = () => {
                         </>
                     ) : (
                         // Optional helpful hint when nothing selected and not searching
-                        <p style={{ color: '#666' }}>Select a genre or type in the search bar to find games.</p>
+                        <p style={{ color: '#330033' }}>Select a genre or type in the search bar to find games.</p>
                     )}
 
                     <Wishlist
