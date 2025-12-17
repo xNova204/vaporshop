@@ -441,8 +441,8 @@ const App: React.FC = () => {
                             selectedGenre={selectedGenre}
                         />
 
-                        {/* Show GameList when either a genre is selected, "Select" is chosen, or the user is searching */}
-                        {(selectedGenre !== null || searchQuery.trim() !== '') ? (
+                        {/* Always show GameList if there are genres */}
+                        {genres.length > 0 && (
                             <>
                                 {/* Heading: show search info when searching, otherwise show selected genre or "All Games" */}
                                 {searchQuery.trim() !== '' ? (
@@ -460,9 +460,6 @@ const App: React.FC = () => {
                                     onGameSelect={handleSelectGame}
                                 />
                             </>
-                        ) : (
-                            // Helpful hint if no genre is selected and search is empty
-                            <p style={{ color: '#330033' }}>Select a genre or type in the search bar to find games.</p>
                         )}
 
                         <Wishlist
