@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import GenreList from './components/GenreList';
 import GameList from './components/GameList';
+import GameDetails from './components/GameDetails';
 import Wishlist from './components/Wishlist';
 import Login from './components/Login';
 import ManageGames from './components/ManageGames';
@@ -14,9 +15,7 @@ import {
     saveRefundRequest,
     fetchPendingRefundRequests,
     approveRefundRequest,
-    denyRefundRequest,
-    addReviewToFirestore,
-    fetchReviewsForGame
+    denyRefundRequest
 } from './firebase/firestore';
 import { Game, Genre } from './types/types';
 import { doc, getDoc, setDoc } from 'firebase/firestore';
@@ -38,15 +37,7 @@ const App: React.FC = () => {
 
     // State for selected game and reviews
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);  // New state for selected game
-    const [reviews, setReviews] = useState<{
-        userId: string;
-        review: string;
-        rating: number;
-        createdAt: Date;
-    }[]>([]);
-    const [reviewText, setReviewText] = useState<string>('');  // State for the review input
     const [userEmail, setUserEmail] = useState<string>(''); // store email for greeting
-
 
     const handleAddGame = async (game: Omit<Game, 'id'>) => {
         try {
@@ -92,18 +83,6 @@ const App: React.FC = () => {
 
         fetchGenres();
     }, []);
-
-    // Fetch reviews for selected game
-    useEffect(() => {
-        if (selectedGame) {
-            const fetchReviews = async () => {
-                const gameReviews = await fetchReviewsForGame(selectedGame.id);
-                setReviews(gameReviews);
-            };
-
-            fetchReviews();
-        }
-    }, [selectedGame]);
 
     useEffect(() => {
         if (userId && role === 'customer') {
@@ -255,17 +234,6 @@ const App: React.FC = () => {
         setSelectedGame(game);
     };
 
-    // Handle submitting a review
-    const handleSubmitReview = async () => {
-        if (reviewText && selectedGame && userId) {
-            await addReviewToFirestore(selectedGame.id, userId, reviewText, 5); // Assuming rating is 5
-            setReviewText('');  // Reset the review input
-            setSelectedGame(null);  // Optionally, close the selected game after submission
-        } else {
-            alert('Please provide a review.');
-        }
-    };
-
     const filteredGames = () => {
         const query = searchQuery.toLowerCase().trim();
 
@@ -352,45 +320,12 @@ const App: React.FC = () => {
 
             </div>
 
-            {/* Display selected game details */}
-            {selectedGame && (
-                <div>
-                    <h2>Game Details</h2>
-                    <p>Name: {selectedGame.name}</p>
-                    <p>Genre: {selectedGame.genre}</p>
-                    <p>Price: {selectedGame.price}</p>
-                    <h3>Reviews</h3>
-                    <ul style={{ listStyle: 'none', padding: 0 }}>
-                        {reviews.map((review, index) => (
-                            <li key={index} style={{
-                                marginBottom: '15px',
-                                padding: '10px',
-                                borderRadius: '8px',
-                                background: 'rgba(255,255,255,0.1)',
-                                boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
-                            }}>
-                                <p style={{ margin: '0 0 5px 0' }}>
-                                    <strong>{review.userId.slice(0, 8)}</strong> ({review.rating} ⭐)
-                                </p>
-                                <p style={{ margin: '0 0 5px 0' }}>{review.review}</p>
-                                <p style={{ margin: 0, fontSize: '12px', color: '#ddd' }}>
-                                    {review.createdAt.toLocaleString()}
-                                </p>
-                            </li>
-                        ))}
-                    </ul>
-                    <textarea
-                        value={reviewText}
-                        onChange={(e) => setReviewText(e.target.value)}
-                        placeholder="Write your review here"
-                        rows={4}
-                        style={{ width: '100%' }}
-                    />
-                    <button style={styles.button} onClick={handleSubmitReview}>Submit Review</button>
-                </div>
-            )}
+                {/* Display selected game details */}
+                {selectedGame && (
+                    <GameDetails game={selectedGame} userId={userId!} />
+                )}
 
-            {role === 'employee' && (
+                {role === 'employee' && (
                 <>
                     <h2>Manage Games</h2>
                     <div>

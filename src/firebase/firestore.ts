@@ -173,22 +173,22 @@ export const denyRefundRequest = async (requestId: string): Promise<void> => {
 
 // Add review to Firestore
 export const addReviewToFirestore = async (gameId: string, userId: string, review: string, rating: number) => {
+    const userDoc = await getDoc(doc(db, 'users', userId));
+    const username = userDoc.exists() ? (userDoc.data().email as string).split('@')[0] : 'Unknown';
+
     const reviewCollection = collection(db, 'reviews');
     const newReview = {
         gameId,
         userId,
+        username,        // store the username directly
         review,
         rating,
         createdAt: new Date(),
     };
 
-    try {
-        const docRef = await addDoc(reviewCollection, newReview);
-        console.log("Review submitted with ID: ", docRef.id);
-    } catch (error) {
-        console.error("Error submitting review: ", error);
-    }
+    await addDoc(reviewCollection, newReview);
 };
+
 
 // Fetch reviews for a specific game
 export const fetchReviewsForGame = async (gameId: string) => {
