@@ -1,10 +1,9 @@
-// src/components/GenreList.tsx
 import React from 'react';
 import { dropdownStyle } from "../styles";
 
 interface GenreListProps {
     genres: string[];
-    onGenreSelect: (genre: string) => void;
+    onGenreSelect: (genre: string | null) => void;
     selectedGenre: string | null;
 }
 
@@ -14,10 +13,11 @@ const GenreList: React.FC<GenreListProps> = ({ genres, onGenreSelect, selectedGe
             <h2 style={{ color: "#fff" }}>Select a Genre</h2>
 
             <select
-                value={selectedGenre || ""}
-                onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
-                    onGenreSelect(e.target.value)
-                }
+                value={selectedGenre ?? ""}
+                onChange={(e) => {
+                    const value = e.target.value;
+                    onGenreSelect(value === "" ? null : value);
+                }}
                 style={dropdownStyle}
             >
                 <option value="">Select</option>

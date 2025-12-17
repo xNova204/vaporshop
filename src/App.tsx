@@ -19,6 +19,8 @@ import {
     fetchReviewsForGame
 } from './firebase/firestore';
 import { Game, Genre } from './types/types';
+import { doc, getDoc, setDoc } from 'firebase/firestore';
+import { db } from './firebase/firebase';
 
 const App: React.FC = () => {
     const [loggedIn, setLoggedIn] = useState(false);
@@ -36,7 +38,12 @@ const App: React.FC = () => {
 
     // State for selected game and reviews
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);  // New state for selected game
-    const [reviews, setReviews] = useState<{ userId: string; username: string; review: string; rating: number; createdAt: Date }[]>([]);
+    const [reviews, setReviews] = useState<{
+        userId: string;
+        review: string;
+        rating: number;
+        createdAt: Date;
+    }[]>([]);
     const [reviewText, setReviewText] = useState<string>('');  // State for the review input
     const [userEmail, setUserEmail] = useState<string>(''); // store email for greeting
 
@@ -192,12 +199,45 @@ const App: React.FC = () => {
         setShowRefundPrompt(true);
     };
 
-    const handleLogin = (role: 'customer' | 'employee', userId: string, email: string) => {
+    const handleLogin = async (userId: string, email: string) => {
+        const userRef = doc(db, 'users', userId);
+        const userSnap = await getDoc(userRef);
+
+        let role: 'customer' | 'employee' = 'customer';
+
+        if (userSnap.exists()) {
+            const data = userSnap.data();
+
+            if (data.role === 'employee') {
+                role = 'employee';
+            }
+
+            if (!data.role) {
+                await setDoc(
+                    userRef,
+                    {
+                        email,
+                        role: 'customer',
+                        createdAt: new Date(),
+                    },
+                    { merge: true }
+                );
+            }
+        } else {
+            // First login ever
+            await setDoc(userRef, {
+                email,
+                role: 'customer',
+                createdAt: new Date(),
+            });
+        }
+
         setRole(role);
         setLoggedIn(true);
         setUserId(userId);
         setUserEmail(email);
     };
+
 
     const handleApproveRefund = async (requestId: string, userId: string, gameId: string) => {
         await approveRefundRequest(requestId, userId, gameId);
@@ -238,7 +278,7 @@ const App: React.FC = () => {
             );
         }
 
-        // No search text — filter by selected genre only
+        // If a genre is selected, filter by that genre
         if (selectedGenre) {
             const selectedGenreData = genres.find(
                 (genre) => genre.name === selectedGenre
@@ -246,13 +286,12 @@ const App: React.FC = () => {
             return selectedGenreData ? selectedGenreData.games : [];
         }
 
-        // No search and no genre selected
-        return [];
+        // If no genre is selected (Select), return all games
+        return genres.flatMap((genre) => genre.games);
     };
 
-
     if (!loggedIn) {
-        return <Login onLogin={(role, userId, email) => handleLogin(role, userId, email)} />;
+        return <Login onLogin={handleLogin} />;
     }
 
     const styles: { [key: string]: React.CSSProperties } = {
@@ -331,7 +370,7 @@ const App: React.FC = () => {
                                 boxShadow: '0 2px 5px rgba(0,0,0,0.2)'
                             }}>
                                 <p style={{ margin: '0 0 5px 0' }}>
-                                    <strong>{review.username}</strong> ({review.rating} ⭐)
+                                    <strong>{review.userId.slice(0, 8)}</strong> ({review.rating} ⭐)
                                 </p>
                                 <p style={{ margin: '0 0 5px 0' }}>{review.review}</p>
                                 <p style={{ margin: 0, fontSize: '12px', color: '#ddd' }}>
@@ -358,14 +397,16 @@ const App: React.FC = () => {
                         <h3>Select Genre</h3>
                         <select
                             value={selectedGenre || ''}
-                            onChange={(e) => setSelectedGenre(e.target.value)}
+                            onChange={(e) => setSelectedGenre(e.target.value || null)}
                             style={{ padding: '10px', borderRadius: '5px', border: '1px solid #ccc', width: '100%' }}
                         >
+                            <option value="">Select</option>
                             {genres.map((genre) => (
                                 <option key={genre.id} value={genre.name}>
                                     {genre.name}
                                 </option>
                             ))}
+
                         </select>
                     </div>
                     <ManageGames
@@ -391,57 +432,58 @@ const App: React.FC = () => {
                 </>
             )}
 
-            {role === 'customer' && (
-                <>
-                    <h2>Video Game Genres</h2>
-                    <GenreList
-                        genres={genres.map((genre) => genre.name)}
-                        onGenreSelect={(genre) => setSelectedGenre(genre)}
-                        selectedGenre={selectedGenre}
-                    />
+                {role === 'customer' && (
+                    <>
+                        <h2>Video Game Genres</h2>
+                        <GenreList
+                            genres={genres.map((genre) => genre.name)}
+                            onGenreSelect={(genre) => setSelectedGenre(genre)}
+                            selectedGenre={selectedGenre}
+                        />
 
-                    {/* Show GameList when either a genre is selected OR the user is searching */}
-                    { (selectedGenre || searchQuery.trim() !== '') ? (
-                        <>
-                            {/* Heading: show search info when searching, otherwise show selected genre */}
-                            {searchQuery.trim() !== '' ? (
-                                <h2>Search results for "{searchQuery}"</h2>
-                            ) : (
-                                <h2>Games in {selectedGenre} Genre</h2>
-                            )}
+                        {/* Show GameList when either a genre is selected, "Select" is chosen, or the user is searching */}
+                        {(selectedGenre !== null || searchQuery.trim() !== '') ? (
+                            <>
+                                {/* Heading: show search info when searching, otherwise show selected genre or "All Games" */}
+                                {searchQuery.trim() !== '' ? (
+                                    <h2>Search results for "{searchQuery}"</h2>
+                                ) : selectedGenre ? (
+                                    <h2>Games in {selectedGenre} Genre</h2>
+                                ) : (
+                                    <h2>All Games</h2>
+                                )}
 
-                            <GameList
-                                games={filteredGames()}
-                                onAddToWishlist={addToWishlist}
-                                onBuyGame={handleAddToInventory}
-                                onGameSelect={handleSelectGame}
-                            />
-                        </>
-                    ) : (
-                        // Optional helpful hint when nothing selected and not searching
-                        <p style={{ color: '#330033' }}>Select a genre or type in the search bar to find games.</p>
-                    )}
+                                <GameList
+                                    games={filteredGames()}
+                                    onAddToWishlist={addToWishlist}
+                                    onBuyGame={handleAddToInventory}
+                                    onGameSelect={handleSelectGame}
+                                />
+                            </>
+                        ) : (
+                            // Helpful hint if no genre is selected and search is empty
+                            <p style={{ color: '#330033' }}>Select a genre or type in the search bar to find games.</p>
+                        )}
 
-                    <Wishlist
-                        games={wishlist}
-                        onRemoveFromWishlist={handleRemoveFromWishlist}
-                        onBuyGame={handleAddToInventory}
-                    />
+                        <Wishlist
+                            games={wishlist}
+                            onRemoveFromWishlist={handleRemoveFromWishlist}
+                            onBuyGame={handleAddToInventory}
+                        />
 
-                    <h2>Your Inventory</h2>
-                    <ul>
-                        {inventory.map((game) => (
-                            <li key={game.id}>
-                                {game.name} - {game.price} ({game.genre})
-                                <button style={styles.button} onClick={() => handleRefundButtonClick(game)}>Request Refund</button>
-                            </li>
-                        ))}
-                    </ul>
-                </>
-            )}
+                        <h2>Your Inventory</h2>
+                        <ul>
+                            {inventory.map((game) => (
+                                <li key={game.id}>
+                                    {game.name} - {game.price} ({game.genre})
+                                    <button style={styles.button} onClick={() => handleRefundButtonClick(game)}>Request Refund</button>
+                                </li>
+                            ))}
+                        </ul>
+                    </>
+                )}
 
-
-            {showRefundPrompt && selectedGameForRefund && (
+                {showRefundPrompt && selectedGameForRefund && (
                 <div>
                     <h3>Request a Refund for {selectedGameForRefund.name}</h3>
                     <textarea

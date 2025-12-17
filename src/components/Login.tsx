@@ -1,14 +1,17 @@
 import React, { useState } from 'react';
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from 'firebase/auth';
+import {
+    getAuth,
+    signInWithEmailAndPassword,
+    createUserWithEmailAndPassword,
+} from 'firebase/auth';
 
 interface LoginProps {
-    onLogin: (role: 'customer' | 'employee', userId: string, email: string) => void;
+    onLogin: (userId: string, email: string) => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
     const [email, setEmail] = useState('');
     const [password, setPassword] = useState('');
-    const [role, setRole] = useState<'customer' | 'employee'>('customer');
     const [isSignUp, setIsSignUp] = useState(false);
     const [error, setError] = useState<string>('');
     const auth = getAuth();
@@ -21,12 +24,23 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
 
         try {
             let userCredential;
+
             if (isSignUp) {
-                userCredential = await createUserWithEmailAndPassword(auth, email, password);
+                userCredential = await createUserWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
             } else {
-                userCredential = await signInWithEmailAndPassword(auth, email, password);
+                userCredential = await signInWithEmailAndPassword(
+                    auth,
+                    email,
+                    password
+                );
             }
-            onLogin(role, userCredential.user.uid, email);
+
+            // 🔒 Role is determined server-side (Firestore), not here
+            onLogin(userCredential.user.uid, email);
         } catch (err: unknown) {
             if (err instanceof Error) {
                 setError(err.message || 'An unknown error occurred.');
@@ -36,7 +50,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
         }
     };
 
-    // Type-safe styles
     const styles = {
         container: {
             position: 'fixed',
@@ -67,9 +80,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
             border: '1px solid #ccc',
             fontSize: '15px',
             boxSizing: 'border-box' as const,
-        },
-        radioLabel: {
-            marginRight: '15px',
         },
         button: {
             width: '100%',
@@ -107,7 +117,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     {isSignUp ? 'Create an Account' : 'Welcome Back'}
                 </h2>
 
-                {/* Email */}
                 <input
                     type="email"
                     placeholder="Email"
@@ -116,7 +125,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     style={styles.input}
                 />
 
-                {/* Password */}
                 <input
                     type="password"
                     placeholder="Password"
@@ -124,30 +132,6 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
                     onChange={(e) => setPassword(e.target.value)}
                     style={styles.input}
                 />
-
-                {/* Role Selection */}
-                <div style={{ marginTop: '10px', marginBottom: '10px', color: '#fff' }}>
-                    <label style={styles.radioLabel}>
-                        <input
-                            type="radio"
-                            value="customer"
-                            checked={role === 'customer'}
-                            onChange={() => setRole('customer')}
-                            style={{ marginRight: '4px' }}
-                        />
-                        Customer
-                    </label>
-                    <label>
-                        <input
-                            type="radio"
-                            value="employee"
-                            checked={role === 'employee'}
-                            onChange={() => setRole('employee')}
-                            style={{ marginRight: '4px' }}
-                        />
-                        Employee
-                    </label>
-                </div>
 
                 {error && <p style={styles.error}>{error}</p>}
 
