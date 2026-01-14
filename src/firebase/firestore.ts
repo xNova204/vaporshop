@@ -196,24 +196,17 @@ export const fetchReviewsForGame = async (gameId: string) => {
     const q = query(reviewsCollection, where("gameId", "==", gameId));
     const querySnapshot = await getDocs(q);
 
-    const reviews: { userId: string; username: string; review: string; rating: number; createdAt: Date }[] = [];
+    const reviews: { username: string; review: string; rating: number }[] = [];
 
-    for (const docSnap of querySnapshot.docs) {
+    querySnapshot.forEach((docSnap) => {
         const data = docSnap.data();
-        const userId = data.userId;
-
-        // Fetch the user's document to get their email/username
-        const userDoc = await getDoc(doc(db, 'users', userId));
-        const username = userDoc.exists() ? (userDoc.data().email as string).split('@')[0] : 'Unknown';
-
         reviews.push({
-            userId,
-            username,
+            username: data.username || 'Unknown', // use stored username
             review: data.review,
-            rating: data.rating,
-            createdAt: data.createdAt.toDate(),
+            rating: data.rating
         });
-    }
+    });
 
     return reviews;
 };
+

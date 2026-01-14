@@ -43,11 +43,11 @@ const App: React.FC = () => {
     const handleAddGame = async (game: Omit<Game, 'id'>) => {
         try {
             await addGameToFirestore(game); // Add to Firestore
-            setInventory((prevInventory) => [...prevInventory, { ...game, id: Math.random().toString(36).substring(7) }]); // Update state
         } catch (error) {
             console.error("Error adding game:", error);
         }
     };
+
 
     const getUsername = () => {
         return userEmail ? userEmail.split('@')[0] : '';
