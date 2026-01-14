@@ -19,11 +19,17 @@ const GameDetails: React.FC<GameDetailsProps> = ({ game, userId }) => {
     const [rating, setRating] = useState(5);
     const [showReviews, setShowReviews] = useState(false);
 
-    // Fetch reviews for this game
     const fetchReviews = async () => {
         try {
             const reviewsData = await fetchReviewsForGame(game.id);
-            setReviews(reviewsData);
+
+            const mappedReviews: Review[] = reviewsData.map(r => ({
+                username: r.username,
+                review: r.review,
+                rating: r.rating
+            }));
+
+            setReviews(mappedReviews);
         } catch (err) {
             console.error("Error fetching reviews:", err);
         }
@@ -33,7 +39,6 @@ const GameDetails: React.FC<GameDetailsProps> = ({ game, userId }) => {
         fetchReviews();
     }, [game.id]);
 
-    // Submit a new review
     const handleSubmitReview = async () => {
         if (!reviewText.trim()) {
             alert("Please enter a review.");
@@ -42,12 +47,19 @@ const GameDetails: React.FC<GameDetailsProps> = ({ game, userId }) => {
 
         try {
             await addReviewToFirestore(game.id, userId, reviewText, rating);
+
+            // Optimistic UI update
+            setReviews(prev => [
+                ...prev,
+                {
+                    username: userId, // temporary; Firestore will normalize on reload
+                    review: reviewText,
+                    rating
+                }
+            ]);
+
             setReviewText('');
             setRating(5);
-
-            // Refresh reviews immediately
-            await fetchReviews();
-            alert("Your review has been submitted.");
         } catch (err) {
             console.error("Error submitting review:", err);
         }
@@ -56,52 +68,45 @@ const GameDetails: React.FC<GameDetailsProps> = ({ game, userId }) => {
     return (
         <div>
             <h3>{game.name}</h3>
-            {game.imageUrl && (
-                <img src={game.imageUrl} alt={game.name} style={{ width: '200px', marginBottom: '10px' }} />
-            )}
-            <p>{game.genre}</p>
-            <p>{game.price}</p>
 
-            {/* Add review form */}
+            <textarea
+                value={reviewText}
+                onChange={e => setReviewText(e.target.value)}
+                placeholder="Write your review..."
+                rows={4}
+                style={{ width: '100%' }}
+            />
+
             <div>
-                <textarea
-                    value={reviewText}
-                    onChange={e => setReviewText(e.target.value)}
-                    placeholder="Write your review..."
-                    rows={4}
-                    style={{ width: '100%' }}
-                />
-                <div>
-                    <label>Rating: </label>
-                    <select value={rating} onChange={e => setRating(Number(e.target.value))}>
-                        {[1,2,3,4,5].map(num => <option key={num} value={num}>{num}</option>)}
-                    </select>
-                </div>
-                <button onClick={handleSubmitReview}>Submit Review</button>
+                <label>Rating: </label>
+                <select value={rating} onChange={e => setRating(Number(e.target.value))}>
+                    {[1, 2, 3, 4, 5].map(num => (
+                        <option key={num} value={num}>{num}</option>
+                    ))}
+                </select>
             </div>
 
-            {/* Toggle reviews */}
+            <button onClick={handleSubmitReview}>Submit Review</button>
+
             <button onClick={() => setShowReviews(!showReviews)}>
                 {showReviews ? "Hide Reviews" : "Show Reviews"}
             </button>
 
             {showReviews && (
-                <div>
-                    {reviews.length > 0 ? (
-                        <ul>
-                            {reviews.map((r, idx) => (
-                                <li key={idx}>
-                                    <p>{r.review}</p>
-                                    <p><strong>Rating:</strong> {r.rating} / 5</p>
-                                    <p><strong>By {r.username}</strong></p>
-                                    <hr />
-                                </li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p>No reviews yet for this game.</p>
-                    )}
-                </div>
+                reviews.length > 0 ? (
+                    <ul>
+                        {reviews.map((r, idx) => (
+                            <li key={idx}>
+                                <p>{r.review}</p>
+                                <p>Rating: {r.rating} / 5</p>
+                                <p><strong>By {r.username}</strong></p>
+                                <hr />
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>No reviews yet for this game.</p>
+                )
             )}
         </div>
     );

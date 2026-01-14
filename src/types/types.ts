@@ -12,3 +12,9 @@ export interface Genre {
     name: string;
     games: Game[];
 }
+
+export type Review = {
+    userId: string;
+    review: string;
+    rating: number;
+};

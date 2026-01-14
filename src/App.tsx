@@ -34,6 +34,7 @@ const App: React.FC = () => {
     const [showRefundPrompt, setShowRefundPrompt] = useState<boolean>(false);
     const [selectedGameForRefund, setSelectedGameForRefund] = useState<Game | null>(null);
     const [refundRequests, setRefundRequests] = useState<{ id: string; userId: string; gameId: string; reason: string }[]>([]);
+    const [wishlistLoaded, setWishlistLoaded] = useState(false);
 
     // State for selected game and reviews
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);  // New state for selected game
@@ -96,9 +97,8 @@ const App: React.FC = () => {
 
             const fetchUserWishlist = async () => {
                 const userWishlist = await fetchWishlistFromFirestore(userId);
-                if (userWishlist.length > 0) {
-                    setWishlist(userWishlist);
-                }
+                setWishlist(userWishlist);
+                setWishlistLoaded(true);
             };
             fetchUserWishlist();
         }
@@ -115,10 +115,10 @@ const App: React.FC = () => {
     }, [role]);
 
     useEffect(() => {
-        if (userId && wishlist.length > 0) {
+        if (userId && wishlistLoaded) {
             saveWishlistToFirestore(userId, wishlist);
         }
-    }, [wishlist, userId]);
+    }, [wishlist, userId, wishlistLoaded]);
 
     const addToWishlist = (game: Game) => {
         if (!wishlist.some((item) => item.name === game.name)) {
