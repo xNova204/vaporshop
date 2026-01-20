@@ -90,10 +90,13 @@ const ManageGames: React.FC<ManageGamesProps> = ({
                     width: "350px",
                     color: "white",
                     boxShadow: "0 6px 12px rgba(0,0,0,0.25)",
-                    marginBottom: "30px"
+                    marginBottom: "30px",
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center"
                 }}
             >
-                <label>Game Name:</label>
+            <label>Game Name:</label>
                 <input
                     type="text"
                     value={newGame.name}
