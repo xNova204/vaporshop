@@ -416,19 +416,56 @@ const App: React.FC = () => {
                 )}
 
                 {showRefundPrompt && selectedGameForRefund && (
-                <div>
-                    <h3>Request a Refund for {selectedGameForRefund.name}</h3>
-                    <textarea
-                        value={refundReason}
-                        onChange={(e) => setRefundReason(e.target.value)}
-                        placeholder="Please provide a reason for the refund."
-                        rows={4}
-                        style={{ width: '100%' }}
-                    />
-                    <button style={styles.button} onClick={() => handleRequestRefund(selectedGameForRefund, refundReason)}>Submit Request</button>
-                    <button style={styles.button} onClick={() => setShowRefundPrompt(false)}>Cancel</button>
-                </div>
-            )}
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            width: '100vw',
+                            height: '100vh',
+                            background: 'rgba(0,0,0,0.6)',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            zIndex: 9999
+                        }}
+                    >
+                        <div
+                            style={{
+                                background: '#fff',
+                                color: '#000',
+                                padding: '20px',
+                                borderRadius: '12px',
+                                width: '90%',
+                                maxWidth: '500px'
+                            }}
+                        >
+                            <h3>Request a Refund for {selectedGameForRefund.name}</h3>
+
+                            <textarea
+                                value={refundReason}
+                                onChange={(e) => setRefundReason(e.target.value)}
+                                placeholder="Please provide a reason for the refund."
+                                rows={4}
+                                style={{ width: '100%', marginBottom: '10px' }}
+                            />
+
+                            <button
+                                style={styles.button}
+                                onClick={() => handleRequestRefund(selectedGameForRefund, refundReason)}
+                            >
+                                Submit Request
+                            </button>
+
+                            <button
+                                style={styles.button}
+                                onClick={() => setShowRefundPrompt(false)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                )}
             </div>
         </div>
     );
