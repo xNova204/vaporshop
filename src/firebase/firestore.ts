@@ -210,3 +210,8 @@ export const fetchReviewsForGame = async (gameId: string) => {
     return reviews;
 };
 
+export const updateGameInFirestore = async (gameId: string, updatedData: Partial<Game>) => {
+    const gameRef = doc(db, 'games', gameId);
+    await updateDoc(gameRef, updatedData);
+};
+

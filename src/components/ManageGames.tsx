@@ -8,10 +8,18 @@ interface ManageGamesProps {
     genres: string[];
     onAddGame: (game: Omit<Game, 'id'>) => void;
     onRemoveGame: (gameId: string) => void;
+    onEditGame: (game: Game) => void;
     games: Game[];
 }
 
-const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGame, games }) => {
+const ManageGames: React.FC<ManageGamesProps> = ({
+                                                     genres,
+                                                     onAddGame,
+                                                     onRemoveGame,
+                                                     onEditGame,
+                                                     games
+}) => {
+
     const [newGame, setNewGame] = useState<{
         name: string;
         genre: string;
@@ -230,6 +238,23 @@ const ManageGames: React.FC<ManageGamesProps> = ({ genres, onAddGame, onRemoveGa
                         >
                             ${game.price}
                         </p>
+
+                        <button
+                            onClick={() => onEditGame(game)}
+                            style={{
+                                width: "100%",
+                                padding: "8px",
+                                marginTop: "10px",
+                                background: "#8e44ad",
+                                border: "none",
+                                borderRadius: "8px",
+                                cursor: "pointer",
+                                color: "white",
+                                fontWeight: "bold",
+                            }}
+                        >
+                            Edit Game
+                        </button>
 
                         <button
                             onClick={() => onRemoveGame(game.id)}

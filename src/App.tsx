@@ -4,6 +4,7 @@ import GameList from './components/GameList';
 import GameDetails from './components/GameDetails';
 import Wishlist from './components/Wishlist';
 import Login from './components/Login';
+import { updateGameInFirestore } from './firebase/firestore';
 import ManageGames from './components/ManageGames';
 import { addGameToFirestore, deleteGameFromFirestore } from './firebase/firestore';
 import {
@@ -35,6 +36,11 @@ const App: React.FC = () => {
     const [selectedGameForRefund, setSelectedGameForRefund] = useState<Game | null>(null);
     const [refundRequests, setRefundRequests] = useState<{ id: string; userId: string; gameId: string; reason: string }[]>([]);
     const [wishlistLoaded, setWishlistLoaded] = useState(false);
+    const [editingGame, setEditingGame] = useState<Game | null>(null);
+    const [editName, setEditName] = useState('');
+    const [editGenre, setEditGenre] = useState('');
+    const [editPrice, setEditPrice] = useState('');
+    const [editImageUrl, setEditImageUrl] = useState('');
 
     // State for selected game and reviews
     const [selectedGame, setSelectedGame] = useState<Game | null>(null);  // New state for selected game
@@ -176,6 +182,40 @@ const App: React.FC = () => {
         console.log("Selected game for refund:", game);  // Log the game object
         setSelectedGameForRefund(game);
         setShowRefundPrompt(true);
+    };
+
+    const handleEditGameClick = (game: Game) => {
+        setEditingGame(game);
+        setEditName(game.name);
+        setEditGenre(game.genre);
+        setEditPrice(game.price);
+        setEditImageUrl(game.imageUrl || '');
+    };
+
+    const handleSaveGameEdits = async () => {
+        if (!editingGame) return;
+
+        await updateGameInFirestore(editingGame.id, {
+            name: editName,
+            genre: editGenre,
+            price: editPrice,
+            imageUrl: editImageUrl
+        });
+
+        setEditingGame(null);
+
+        // Refresh games
+        const games = await fetchGamesFromFirestore();
+        const genreMap: { [key: string]: Genre } = {};
+
+        games.forEach((game) => {
+            if (!genreMap[game.genre]) {
+                genreMap[game.genre] = { id: game.genre, name: game.genre, games: [] };
+            }
+            genreMap[game.genre].games.push(game);
+        });
+
+        setGenres(Object.values(genreMap));
     };
 
     const handleLogin = async (userId: string, email: string) => {
@@ -345,10 +385,11 @@ const App: React.FC = () => {
                         </select>
                     </div>
                     <ManageGames
-                        genres={genres.map((genre) => genre.name)} // Genres for the select dropdown
-                        onAddGame={handleAddGame} // Pass add game handler
-                        onRemoveGame={handleRemoveGame} // Pass remove game handler
-                        games={filteredGames()} // Pass the filtered games
+                        genres={genres.map((genre) => genre.name)}
+                        onAddGame={handleAddGame}
+                        onRemoveGame={handleRemoveGame}
+                        onEditGame={handleEditGameClick}
+                        games={filteredGames()}
                     />
 
                     <h2>Pending Refund Requests</h2>
@@ -414,7 +455,82 @@ const App: React.FC = () => {
                         </ul>
                     </>
                 )}
+                {editingGame && (
+                    <div
+                        style={{
+                            position: 'fixed',
+                            top: 0,
+                            left: 0,
+                            width: '100vw',
+                            height: '100vh',
+                            background: 'rgba(0,0,0,0.6)',
+                            display: 'flex',
+                            justifyContent: 'center',
+                            alignItems: 'center',
+                            zIndex: 10000
+                        }}
+                    >
+                        <div
+                            style={{
+                                background: '#fff',
+                                color: '#000',
+                                padding: '20px',
+                                borderRadius: '12px',
+                                width: '90%',
+                                maxWidth: '500px'
+                            }}
+                        >
+                            <h3>Edit Game</h3>
 
+                            <input
+                                type="text"
+                                value={editName}
+                                onChange={(e) => setEditName(e.target.value)}
+                                placeholder="Game Name"
+                                style={{ width: '100%', marginBottom: '10px' }}
+                            />
+
+                            <input
+                                type="text"
+                                value={editPrice}
+                                onChange={(e) => setEditPrice(e.target.value)}
+                                placeholder="Price"
+                                style={{ width: '100%', marginBottom: '10px' }}
+                            />
+
+                            <select
+                                value={editGenre}
+                                onChange={(e) => setEditGenre(e.target.value)}
+                                style={{ width: '100%', marginBottom: '10px' }}
+                            >
+                                {genres.map((g) => (
+                                    <option key={g.name} value={g.name}>
+                                        {g.name}
+                                    </option>
+                                ))}
+                            </select>
+
+                            <input
+                                type="text"
+                                value={editImageUrl}
+                                onChange={(e) => setEditImageUrl(e.target.value)}
+                                placeholder="Image URL (optional)"
+                                style={{ width: '100%', marginBottom: '10px' }}
+                            />
+
+                            <button style={styles.button} onClick={handleSaveGameEdits}>
+                                Save Changes
+                            </button>
+
+                            <button
+                                style={styles.button}
+                                onClick={() => setEditingGame(null)}
+                            >
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                )}
                 {showRefundPrompt && selectedGameForRefund && (
                     <div
                         style={{
